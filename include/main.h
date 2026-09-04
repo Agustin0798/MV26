@@ -3,6 +3,9 @@
 #include <stdint.h>
 #include "funct.h"
 #include "logic.h"
+#include <time.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 //constantes de cantidad
 #define MM 16384
