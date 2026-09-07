@@ -1,0 +1,13 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build vmx",
+      "type": "shell",
+      "command": "gcc",
+      "args": ["-std=c11", "-Wall", "-Wextra", "-g", "-o", "vmx", "main.c", "instructions.c", "loader.c"],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$gcc"]
+    }
+  ]
+}
