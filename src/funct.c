@@ -9,7 +9,88 @@ void NULA(int32_t *a, int32_t *b)
 }
 
 // Prototipos de las instrucciones
-void SYS(int32_t *a, int32_t *b);
+void SYS(int32_t *a, int32_t *b)
+{
+    uint32_t punt_inicio=REGS[EDX];
+    uint32_t cant_val=REGS[ECX] & 0x0000FFFF;
+    uint32_t tam_val=(REGS[ECX] >> 16) & 0x0000FFFF;
+    uint32_t formato=REGS[EAX];
+    uint32_t buffer;
+    char aux[33];
+    int i;
+
+    switch (*b)
+    {
+        case 1: //READ
+                for (i=0; i<cant_val;i++)
+                {
+                    switch (formato)
+                    {
+                        case 0x01:  //DECIMAL
+                                scanf(" %d",&buffer);
+                            break;
+                        case 0x02: //CARACTER
+                                scanf(" %c",&buffer);
+                            break;
+                        case 0x04: //OCTAL
+                                scanf(" %o",&buffer);
+                            break;
+                        case 0x08: //HEXADECIMAL
+                                scanf(" %x",&buffer);
+                            break;
+                        case 0x10: //BINARIO
+                                scanf(" %32s",aux);
+                                buffer=strtol(aux,NULL,2); //estandar para lectura de nums binarios
+                            break;
+                        
+                        default:
+                                printf("\nFORMATO DE READ INVALIDO\n");
+                            break;
+                    }
+                    //guardar en memoria
+                    //completar cuando tengamos las funciones para trabajar en memoria
+                }
+            break;
+        case 2: //WRITE
+                for (i=0; i<cant_val;i++)
+                {
+                    //traer de memoria
+                    //completar cuando tengamos las funciones para trabajar en memoria
+                    if ((formato & 0b00001) == 0b00001) //DECIMAL
+                    {
+                        printf("%d",&buffer);
+                    }
+                    if ((formato & 0b00010) == 0b00010) //CARACTER
+                    {
+                        printf("%c",&buffer);
+                    }
+                    if ((formato & 0b00100) == 0b00100) //OCTAL
+                    {
+                        printf("%o",&buffer);
+                    }
+                    if ((formato & 0b01000) == 0b01000) //HEXADECIMAL
+                    {
+                        printf("%x",&buffer);
+                    }
+                    if ((formato & 0b10000) == 0b10000) //BINARIO
+                    {
+                        int bit,i;
+                        int cant_bits= sizeof(buffer) *8;
+                        for (i = cant_bits - 1; i >= 0; i--)
+                        {
+        
+                            bit = (buffer >> i) & 1;
+                            printf("%d", bit);
+                        }
+        
+                    }
+                    printf("\n");
+                }
+            break;
+        default:
+            break;
+    }
+}
 
 void JMP(int32_t *a, int32_t *b)
 {
