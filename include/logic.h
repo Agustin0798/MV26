@@ -6,3 +6,9 @@
 #define FalloSeg 3
 
 void error(int ce);
+int32_t valorOperado(int op);
+void infoOperando(int op, uint32_t dirFisOP);
+void decoOperacion(uint8_t operacion);
+void guardaMem(uint32_t dirFis, uint32_t puntero, int cant, uint32_t valor);
+int32_t leeMem(uint32_t dirFis, uint32_t puntero, int cant);
+uint32_t calculaDirFis(uint32_t puntero, int16_t offset);

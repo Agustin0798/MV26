@@ -11,7 +11,7 @@ void NULA(int32_t *a, int32_t *b)
 // Prototipos de las instrucciones
 void SYS(int32_t *a, int32_t *b)
 {
-    uint32_t punt_inicio=REGS[EDX];
+    uint32_t punt_inicio=REGS[EDX],dirFis;
     uint32_t cant_val=REGS[ECX] & 0x0000FFFF;
     uint32_t tam_val=(REGS[ECX] >> 16) & 0x0000FFFF;
     uint32_t formato=REGS[EAX];
