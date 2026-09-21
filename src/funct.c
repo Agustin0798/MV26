@@ -1,20 +1,20 @@
-#include "main.h"
+#include "mv.h"
 
 void modificaCC(int32_t);
 
 // Función para los códigos no definidos
-void NULA(int32_t *a, int32_t *b)
+void NULA(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     error(InstInv);
 }
 
 // Prototipos de las instrucciones
-void SYS(int32_t *a, int32_t *b)
+void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint32_t punt_inicio=REGS[EDX],dirFis;
-    uint32_t cant_val=REGS[ECX] & 0x0000FFFF;
-    uint32_t tam_val=(REGS[ECX] >> 16) & 0x0000FFFF;
-    uint32_t formato=REGS[EAX];
+    uint32_t punt_inicio=mv->REGS[EDX],dirFis;
+    uint32_t cant_val=mv->REGS[ECX] & 0x0000FFFF;
+    uint32_t tam_val=(mv->REGS[ECX] >> 16) & 0x0000FFFF;
+    uint32_t formato=mv->REGS[EAX];
     uint32_t buffer;
     char aux[33];
     int i;
@@ -52,7 +52,7 @@ void SYS(int32_t *a, int32_t *b)
                 }
             break;
         case 2: //WRITE
-                for (i=0; i<cant_val;i++)
+                for (i=0; i < cant_val; i++)
                 {
                     //traer de memoria
                     //completar cuando tengamos las funciones para trabajar en memoria
@@ -92,119 +92,122 @@ void SYS(int32_t *a, int32_t *b)
     }
 }
 
-void JMP(int32_t *a, int32_t *b)
+void JMP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    LDL(REGS[IP],b);
+    LDL(mv->REGS[IP],b,mv);
 }
 
-void JP(int32_t *a, int32_t *b)
+void JP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint32_t aux=REGS[CC];
+    uint32_t aux=mv->REGS[CC];
 
     aux>>=28;
     if ((aux & 0b1100) == 0) //bits N y Z apagados (no se consideran los bits C y V)
-        JMP(a,b);
+        JMP(a,b,mv);
 }
 
-void JN(int32_t *a, int32_t *b)
+void JN(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint32_t aux=REGS[CC];
+    uint32_t aux=mv->REGS[CC];
 
     aux>>=28;
     if ((aux & 0b1100) == 0b1000) //bit N prendido y Z apagado
-        JMP(a,b);
+        JMP(a,b,mv);
 }
 
-void JZ(int32_t *a, int32_t *b)
+void JZ(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint32_t aux=REGS[CC];
+    uint32_t aux=mv->REGS[CC];
 
     aux>>=28;
     if ((aux & 0b1100) == 0b0100) //bit N apagado y Z prendido
-        JMP(a,b);
+        JMP(a,b,mv);
 }
 
-void JC(int32_t *a, int32_t *b)
+void JC(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint32_t aux=REGS[CC];
+    uint32_t aux=mv->REGS[CC];
 
     aux>>=28;
     if ((aux & 0b0010) == 0b0010) //bit C encendido (el resto son irrelevantes)
-        JMP(a,b);
+        JMP(a,b,mv);
 }
 
-void JV(int32_t *a, int32_t *b)
+void JV(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint32_t aux=REGS[CC];
+    uint32_t aux=mv->REGS[CC];
 
     aux>>=28;
     if ((aux & 0b0001) == 0b0001) //bit V encendido (el resto son irrelevantes)
-        JMP(a,b);
+        JMP(a,b,mv);
 }
 
-void JNP(int32_t *a, int32_t *b)
+void JNP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint32_t aux=REGS[CC];
+    uint32_t aux=mv->REGS[CC];
 
     aux>>=28;
     aux&=0b1100;
     if ((aux == 0b1000) || (aux == 0b0100)) //bit N encendido o bit Z encendido
-        JMP(a,b);
+        JMP(a,b,mv);
 }
 
-void JNN(int32_t *a, int32_t *b)
+void JNN(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint32_t aux=REGS[CC];
+    uint32_t aux=mv->REGS[CC];
 
     aux>>=28;
-    if ((aux & 0b1000) == 0) // bit N apagado (el resto son irrelevantes)
-        JMP(a,b);
+    aux&=0b1100;
+    if ((aux == 0b0100) || (aux == 0b0000)) //bit Z encendido o ambos apagados
+        JMP(a,b,mv);
 }
 
-void JNZ(int32_t *a, int32_t *b)
+
+void JNZ(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint32_t aux=REGS[CC];
+    uint32_t aux=mv->REGS[CC];
 
     aux>>=28;
     if ((aux & 0b0100) == 0) //bit Z apagado (el resto son irrelevantes)
-        JMP(a,b);
+        JMP(a,b,mv);
 }
 
-void NOT(int32_t *a, int32_t *b)
+void NOT(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    ~(*b);
+    *b = ~(*b);
 }
 
-void STOP(int32_t *a, int32_t *b)
+
+void STOP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    REGS[IP]=-1;
+    mv->REGS[IP]= -1;
 }
 
-void MOV(int32_t *a, int32_t *b)
+void MOV(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     *a=*b;
     modificaCC(*a);
 }
 
-void ADD(int32_t *a, int32_t *b)
+void ADD(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     *a+=*b;
     modificaCC(*a);
 }
 
-void SUB(int32_t *a, int32_t *b)
+void SUB(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     *a-=*b;
     modificaCC(*a);
 }
 
-void MUL(int32_t *a, int32_t *b)
+void MUL(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     (*a)*=*b;
     modificaCC(*a);
 }
 
-void DIV(int32_t *a, int32_t *b)
+void DIV(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     int32_t cociente,resto;
 
@@ -214,69 +217,75 @@ void DIV(int32_t *a, int32_t *b)
         resto=*a % *b;
 
         *a=cociente;
-        REGS[AC]=resto;
+        mv->REGS[AC]=resto;
     }
     else
         error(DivCero);
 }
 
-void CMP(int32_t *a, int32_t *b)
+void CMP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     int32_t resta=*a - *b;
     modificaCC(resta);
 }
 
-void AND(int32_t *a, int32_t *b)
+void AND(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     *a=*a & *b;
     modificaCC(*a);
 }
 
-void OR(int32_t *a, int32_t *b)
+void OR(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     *a=*a | *b;
     modificaCC(*a);
 }
 
-void XOR(int32_t *a, int32_t *b)
+void XOR(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     *a=*a ^ *b;
     modificaCC(*a);
 }
 
-void SWAP(int32_t *a, int32_t *b);
+void SWAP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
+{
+    int32_t temp=*a;
+    *a=*b;
+    *b=temp;
+    //TODO: ver si se modifica CC en este caso, no se especifica en el enunciado
+}
 
-void SHL(int32_t *a, int32_t *b)
+void SHL(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     uint32_t resultado=*a << *b;
     *a = resultado;
     modificaCC(resultado);
 }
 
-void SHR(int32_t *a, int32_t *b)
+void SHR(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     uint32_t resultado= *a >> *b;
     *a=resultado;
     modificaCC(resultado);
 }
 
-void SAR(int32_t *a, int32_t *b)
+void SAR(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     *a= *a >> *b;
     modificaCC(*a);
 }
 
-void LDH(int32_t *a, int32_t *b) 
+void LDH(int32_t *a, int32_t *b, MaquinaVirtual *mv) 
 { 
     *a = (*a & 0x0000FFFF) | ((*b & 0x0000FFFF) << 16);
 }
 
-void LDL(int32_t *a, int32_t *b) 
+void LDL(int32_t *a, int32_t *b, MaquinaVirtual *mv) 
 {
     *a = (*a & 0xFFFF0000) | (*b & 0x0000FFFF);
 }
 
-void RND(int32_t *a, int32_t *b)
+void RND(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     srand(time(NULL));
     *a=rand() % (*b + 1);
