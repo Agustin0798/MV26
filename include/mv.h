@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "funct.h"
+#include "operaciones.h"
 #include "logic.h"
 
 //constantes de cantidad
@@ -44,7 +44,7 @@ extern void (*func[MF])(int32_t *,int32_t *);
 typedef struct {
     uint8_t RAM[MM];
     uint32_t TDS[MTDS];
-    int32_t REGS[MR];
+    uint32_t REGS[MR];
 } MaquinaVirtual;
 
 /* ---------- Helpers de empaquetado de 32 bits ----------
