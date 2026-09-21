@@ -4,4 +4,4 @@ build/
 *.out
 CMakeCache.txt
 CMakeFiles/
-!tools/vmt/vmt.exe
+.vscode

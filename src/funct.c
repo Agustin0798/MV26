@@ -3,32 +3,182 @@
 void modificaCC(int32_t);
 
 // Función para los códigos no definidos
-void NULA(int32_t *a, int32_t *b);
+void NULA(int32_t *a, int32_t *b)
+{
+    error(InstInv);
+}
 
 // Prototipos de las instrucciones
-void SYS(int32_t *a, int32_t *b);
+void SYS(int32_t *a, int32_t *b)
+{
+    uint32_t punt_inicio=REGS[EDX],dirFis;
+    uint32_t cant_val=REGS[ECX] & 0x0000FFFF;
+    uint32_t tam_val=(REGS[ECX] >> 16) & 0x0000FFFF;
+    uint32_t formato=REGS[EAX];
+    uint32_t buffer;
+    char aux[33];
+    int i;
 
-void JMP(int32_t *a, int32_t *b);
+    switch (*b)
+    {
+        case 1: //READ
+                for (i=0; i<cant_val;i++)
+                {
+                    switch (formato)
+                    {
+                        case 0x01:  //DECIMAL
+                                scanf(" %d",&buffer);
+                            break;
+                        case 0x02: //CARACTER
+                                scanf(" %c",&buffer);
+                            break;
+                        case 0x04: //OCTAL
+                                scanf(" %o",&buffer);
+                            break;
+                        case 0x08: //HEXADECIMAL
+                                scanf(" %x",&buffer);
+                            break;
+                        case 0x10: //BINARIO
+                                scanf(" %32s",aux);
+                                buffer=strtol(aux,NULL,2); //estandar para lectura de nums binarios
+                            break;
+                        
+                        default:
+                                printf("\nFORMATO DE READ INVALIDO\n");
+                            break;
+                    }
+                    //guardar en memoria
+                    //completar cuando tengamos las funciones para trabajar en memoria
+                }
+            break;
+        case 2: //WRITE
+                for (i=0; i<cant_val;i++)
+                {
+                    //traer de memoria
+                    //completar cuando tengamos las funciones para trabajar en memoria
+                    if ((formato & 0b00001) == 0b00001) //DECIMAL
+                    {
+                        printf("%d",&buffer);
+                    }
+                    if ((formato & 0b00010) == 0b00010) //CARACTER
+                    {
+                        printf("%c",&buffer);
+                    }
+                    if ((formato & 0b00100) == 0b00100) //OCTAL
+                    {
+                        printf("%o",&buffer);
+                    }
+                    if ((formato & 0b01000) == 0b01000) //HEXADECIMAL
+                    {
+                        printf("%x",&buffer);
+                    }
+                    if ((formato & 0b10000) == 0b10000) //BINARIO
+                    {
+                        int bit,i;
+                        int cant_bits= sizeof(buffer) *8;
+                        for (i = cant_bits - 1; i >= 0; i--)
+                        {
+        
+                            bit = (buffer >> i) & 1;
+                            printf("%d", bit);
+                        }
+        
+                    }
+                    printf("\n");
+                }
+            break;
+        default:
+            break;
+    }
+}
 
-void JP(int32_t *a, int32_t *b);
+void JMP(int32_t *a, int32_t *b)
+{
+    LDL(REGS[IP],b);
+}
 
-void JN(int32_t *a, int32_t *b);
+void JP(int32_t *a, int32_t *b)
+{
+    uint32_t aux=REGS[CC];
 
-void JZ(int32_t *a, int32_t *b);
+    aux>>=28;
+    if ((aux & 0b1100) == 0) //bits N y Z apagados (no se consideran los bits C y V)
+        JMP(a,b);
+}
 
-void JC(int32_t *a, int32_t *b);
+void JN(int32_t *a, int32_t *b)
+{
+    uint32_t aux=REGS[CC];
 
-void JV(int32_t *a, int32_t *b);
+    aux>>=28;
+    if ((aux & 0b1100) == 0b1000) //bit N prendido y Z apagado
+        JMP(a,b);
+}
 
-void JNP(int32_t *a, int32_t *b);
+void JZ(int32_t *a, int32_t *b)
+{
+    uint32_t aux=REGS[CC];
 
-void JNN(int32_t *a, int32_t *b);
+    aux>>=28;
+    if ((aux & 0b1100) == 0b0100) //bit N apagado y Z prendido
+        JMP(a,b);
+}
 
-void JNZ(int32_t *a, int32_t *b);
+void JC(int32_t *a, int32_t *b)
+{
+    uint32_t aux=REGS[CC];
 
-void NOT(int32_t *a, int32_t *b);
+    aux>>=28;
+    if ((aux & 0b0010) == 0b0010) //bit C encendido (el resto son irrelevantes)
+        JMP(a,b);
+}
 
-void STOP(int32_t *a, int32_t *b);
+void JV(int32_t *a, int32_t *b)
+{
+    uint32_t aux=REGS[CC];
+
+    aux>>=28;
+    if ((aux & 0b0001) == 0b0001) //bit V encendido (el resto son irrelevantes)
+        JMP(a,b);
+}
+
+void JNP(int32_t *a, int32_t *b)
+{
+    uint32_t aux=REGS[CC];
+
+    aux>>=28;
+    aux&=0b1100;
+    if ((aux == 0b1000) || (aux == 0b0100)) //bit N encendido o bit Z encendido
+        JMP(a,b);
+}
+
+void JNN(int32_t *a, int32_t *b)
+{
+    uint32_t aux=REGS[CC];
+
+    aux>>=28;
+    if ((aux & 0b1000) == 0) // bit N apagado (el resto son irrelevantes)
+        JMP(a,b);
+}
+
+void JNZ(int32_t *a, int32_t *b)
+{
+    uint32_t aux=REGS[CC];
+
+    aux>>=28;
+    if ((aux & 0b0100) == 0) //bit Z apagado (el resto son irrelevantes)
+        JMP(a,b);
+}
+
+void NOT(int32_t *a, int32_t *b)
+{
+    ~(*b);
+}
+
+void STOP(int32_t *a, int32_t *b)
+{
+    REGS[IP]=-1;
+}
 
 void MOV(int32_t *a, int32_t *b)
 {
@@ -116,8 +266,6 @@ void SAR(int32_t *a, int32_t *b)
     modificaCC(*a);
 }
 
-#include <stdint.h>
-
 void LDH(int32_t *a, int32_t *b) 
 { 
     *a = (*a & 0x0000FFFF) | ((*b & 0x0000FFFF) << 16);
@@ -128,4 +276,8 @@ void LDL(int32_t *a, int32_t *b)
     *a = (*a & 0xFFFF0000) | (*b & 0x0000FFFF);
 }
 
-void RND(int32_t *a, int32_t *b);
+void RND(int32_t *a, int32_t *b)
+{
+    srand(time(NULL));
+    *a=rand() % (*b + 1);
+}
