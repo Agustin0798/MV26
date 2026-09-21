@@ -99,5 +99,26 @@ void guardaMem(uint32_t dirFis, uint32_t puntero, int cant, uint32_t valor)
 
 uint32_t calculaDirFis(uint32_t puntero, int16_t offset)
 {
+    uint16_t pos_tds=puntero >> 16;
+    int16_t offset_p=puntero & 0x0000FFFF;
+    uint32_t dirFis;
+    uint32_t base_seg=TDS[pos_tds] >> 16;
     
+    dirFis=base_seg+ (int32_t) offset+ (int32_t) offset_p;
+
+    return dirFis;
+}
+
+int dirValida(uint32_t dirFis, uint32_t puntero)
+{
+    uint16_t pos_tds=puntero >> 16;
+    uint32_t base_seg=TDS[pos_tds] >> 16;
+    uint32_t tam_seg=TDS[pos_tds] & 0x0000FFFF;
+    uint32_t fin_seg=base_seg+tam_seg;
+
+    if ((dirFis >=base_seg) && (dirFis < fin_seg))
+        return 1;
+    else
+        error(FalloSeg);
+
 }
