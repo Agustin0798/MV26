@@ -5,10 +5,14 @@
 #define DivCero 2
 #define FalloSeg 3
 
-void error(int ce);
+void dirValida(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv);
+int16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv);
+void guardaMem(MaquinaVirtual *mv);
+void leeMem(MaquinaVirtual *mv);
 int32_t valorOperado(int op, MaquinaVirtual *mv);
-void infoOperando(int op, uint32_t dirFisOP, MaquinaVirtual *mv);
+void infoOperando(MaquinaVirtual *mv);
 void decoOperacion(uint8_t operacion, MaquinaVirtual *mv);
-void guardaMem(uint32_t dirFis, uint32_t puntero, int cant, uint32_t valor, MaquinaVirtual *mv);
-int32_t leeMem(uint32_t dirFis, uint32_t puntero, int cant, MaquinaVirtual *mv);
-uint32_t calculaDirFis(uint32_t puntero, int16_t offset, MaquinaVirtual *mv);
+void leeOperacion(uint8_t *operacion, MaquinaVirtual *mv);
+void error(int ce);
+void guardaOP(uint8_t op, uint32_t valor, MaquinaVirtual *mv);
+void decideGuardar(uint32_t valor1, uint32_t valor2, MaquinaVirtual *mv);
