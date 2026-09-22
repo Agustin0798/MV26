@@ -11,11 +11,12 @@ void NULA(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 // Prototipos de las instrucciones
 void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint32_t punt_inicio=mv->REGS[EDX],dirFis;
-    uint32_t cant_val=mv->REGS[ECX] & 0x0000FFFF;
-    uint32_t tam_val=(mv->REGS[ECX] >> 16) & 0x0000FFFF;
+    uint32_t punt_inicio=mv->REGS[EDX];
+    int16_t dirFis;
+    uint16_t cant_val=mv->REGS[ECX] & 0x0000FFFF;
+    uint16_t tam_val=(mv->REGS[ECX] >> 16) & 0x0000FFFF;
     uint32_t formato=mv->REGS[EAX];
-    uint32_t buffer;
+    int32_t buffer;
     char aux[33];
     int i;
 
@@ -47,15 +48,28 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                                 printf("\nFORMATO DE READ INVALIDO\n");
                             break;
                     }
-                    //guardar en memoria
-                    //completar cuando tengamos las funciones para trabajar en memoria
+                    dirFis=calculaDirFis(i*tam_val,punt_inicio,mv);
+                    mv->REGS[LAR]=punt_inicio;
+                    mv->REGS[MAR]= (tam_val << 16) | dirFis;
+                    mv->REGS[MBR]=buffer;
+                    guardaMem(mv);
                 }
             break;
         case 2: //WRITE
                 for (i=0; i < cant_val; i++)
                 {
-                    //traer de memoria
-                    //completar cuando tengamos las funciones para trabajar en memoria
+                    dirFis=calculaDirFis(i*tam_val,punt_inicio,mv);
+                    mv->REGS[LAR]=punt_inicio;
+                    mv->REGS[MAR]= (tam_val << 16) | dirFis;
+                    leeMem(mv);
+                    buffer=mv->REGS[MBR];
+                    
+                    if (tam_val < 4)
+                    {
+                        buffer= buffer << (4 - tam_val);
+                        buffer= buffer >> (4 - tam_val);
+                    }
+
                     if ((formato & 0b00001) == 0b00001) //DECIMAL
                     {
                         printf("%d",&buffer);
