@@ -175,6 +175,7 @@ void JNZ(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 void NOT(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     *b = ~(*b);
+    modificaCC(*b);
 }
 
 
@@ -218,6 +219,7 @@ void DIV(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
         *a=cociente;
         mv->REGS[AC]=resto;
+        modificaCC(cociente);
     }
     else
         error(DivCero);
@@ -249,9 +251,11 @@ void XOR(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void SWAP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    int32_t temp=*a;
-    *a=*b;
-    *b=temp;
+    *a=*a ^ *b;
+    *b=*b ^ *a;
+    *a=*a ^ *b;
+
+    modificaCC(*a);
     //TODO: ver si se modifica CC en este caso, no se especifica en el enunciado
 }
 
