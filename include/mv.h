@@ -47,13 +47,10 @@ typedef struct {
     int32_t REGS[MR];
 } MaquinaVirtual;
 
-/* ---------- Helpers de empaquetado de 32 bits ----------
+/* -Helpers de empaquetado de 32 bits -
  * Varios campos de la especificación (entradas de la TDS, direcciones
  * lógicas, OP1/OP2, etc.) son un entero de 32 bits compuesto por dos
- * mitades de 16 bits: la mitad alta y la mitad baja. Se centralizan acá
- * porque loader.c y, más adelante, cpu.c van a necesitar exactamente lo
- * mismo (por ejemplo, para armar CS/DS o para traducir direcciones
- * lógicas a físicas).
+ * mitades de 16 bits: la mitad alta y la mitad baja.
  */
 
 static inline int32_t empaquetar32(uint16_t mitad_alta, uint16_t mitad_baja) {
