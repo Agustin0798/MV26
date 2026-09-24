@@ -36,6 +36,16 @@
 #define CS  26
 #define DS  27
 
+#define TIPO_NINGUNO   0x0
+#define TIPO_REGISTRO  0x1
+#define TIPO_INMEDIATO 0x2
+#define TIPO_MEMORIA   0x3
+
+#define TAM_TIPO_NINGUNO   0
+#define TAM_TIPO_REGISTRO  1
+#define TAM_TIPO_INMEDIATO 2
+#define TAM_TIPO_MEMORIA   3
+
 //definiciones de variables globales
 extern void (*func[MF])(int32_t *,int32_t *);
 
