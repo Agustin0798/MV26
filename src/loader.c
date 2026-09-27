@@ -1,11 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-
-#include "mv.h"
-#include "loader.h"
-
+#include "main.h"
 
 //  Manejo centralizado de errores 
 static void error_fatal(const char *contexto, const char *detalle) {
@@ -77,14 +70,16 @@ void cargar_codigo_en_memoria(FILE *archivo, MaquinaVirtual *mv, uint16_t tam_co
 }
 
 // Inicialización de registros
-static void inicializar_registros(MaquinaVirtual *mv, int version) {
+void inicializar_registros(MaquinaVirtual *mv, int version) {
     memset(mv->REGS, 0, sizeof(mv->REGS));
 
     switch(version) {
-        case 1:
+        case 1: {
+
             mv->REGS[CS] = empaquetar32(0, 0); /* 00 00 00 00 */
             mv->REGS[DS] = empaquetar32(1, 0);  /* 00 01 00 00 */
             mv->REGS[IP] = mv->REGS[CS];
+        }
             break;
         default:
             error_fatal("inicializar_registros", "versión de archivo no soportada");
@@ -105,7 +100,7 @@ void cargar_programa(const char *path, MaquinaVirtual *mv) {
 
     inicializar_tds(mv, version, tam_codigo);
     cargar_codigo_en_memoria(archivo, mv, tam_codigo);
-    inicializar_registros(mv);
+    inicializar_registros(mv, version);
 
     fclose(archivo);
 }

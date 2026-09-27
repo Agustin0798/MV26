@@ -1,5 +1,4 @@
-#include "mv.h"
-
+#include "main.h"
 
 
 static void uso(const char *prog) {
@@ -9,6 +8,7 @@ static void uso(const char *prog) {
 int main(int argc, char *argv[]) {
 
     MaquinaVirtual mv;
+    srand(time(NULL));
 
     if (argc < 2) {
         uso(argv[0]);

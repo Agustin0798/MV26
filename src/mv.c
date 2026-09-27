@@ -1,6 +1,6 @@
-#include "mv.h"
+#include "main.h"
 
-void (*func[MF])(int32_t *,int32_t *) = {
+void (*func[MF])(int32_t *,int32_t *, MaquinaVirtual *mv) = {
     SYS,   // 00
     JMP,   // 01
     JP,    // 02

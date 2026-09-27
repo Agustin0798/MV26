@@ -1,4 +1,4 @@
-#include "mv.h"
+#include "main.h"
 
 void modificaCC(int32_t ori, int64_t over, uint64_t carry,MaquinaVirtual *mv)
 {
@@ -122,7 +122,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void JMP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    LDL(mv->REGS[IP],b,mv);
+    LDL(&mv->REGS[IP],b,mv);
 }
 
 void JP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
@@ -388,6 +388,5 @@ void LDL(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void RND(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    srand(time(NULL));
     *a=rand() % (*b + 1);
 }

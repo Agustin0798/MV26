@@ -1,4 +1,4 @@
-#include "mv.h"
+#include "main.h"
  
 void error(int ce)
 {
@@ -13,7 +13,6 @@ void error(int ce)
 
 void leeOperacion(uint8_t *operacion, MaquinaVirtual *mv) //lee el primer byte de la instruccion (tipos de operando y cod de operacion) 
 {
-    uint8_t operacion;
     int16_t dirFisIP;
 
     mv->REGS[OP2]=0;
@@ -79,15 +78,17 @@ int32_t valorOperado(int op, MaquinaVirtual *mv) // se les pasa la constante OP1
 
     switch (tipo_op)
     {
-        case 1: //registro
+        case 1: { //registro
                 uint8_t cod_reg=mv->REGS[op] & 0x000000FF;
                 return mv->REGS[cod_reg];
+        }
             break;
-        case 2: //inmediato
+        case 2: {//inmediato
                 int16_t valor=mv->REGS[op] & 0x0000FFFF;
                 return (int32_t) valor;
+        }
             break;
-        case 3: //memoria
+        case 3: { //memoria
                 int16_t offset=mv->REGS[op] >> 8;
                 uint8_t cod_reg=mv->REGS[op] & 0x000000FF;
                 uint32_t puntero=mv->REGS[cod_reg];
@@ -96,6 +97,7 @@ int32_t valorOperado(int op, MaquinaVirtual *mv) // se les pasa la constante OP1
                 mv->REGS[MAR]= (4 << 16) | dirFis;
                 leeMem(mv);
                 return mv->REGS[MBR];
+        }
             break;
         default:
             break;
@@ -186,13 +188,15 @@ void guardaOP(uint8_t op, uint32_t valor, MaquinaVirtual *mv)
 
     switch (tipo_op)
     {
-        case 1: //registro
+        case 1: { //registro
                 uint8_t cod_reg=mv->REGS[op] & 0x000000FF;
                 mv->REGS[cod_reg]=valor;
+            }
             break;
         case 2: //inmediato
+                // No se hace nada, no se puede guardar en un inmediato  
             break;
-        case 3: //memoria
+        case 3: { //memoria
                 int16_t offset=mv->REGS[op] >> 8;
                 uint8_t cod_reg=mv->REGS[op] & 0x000000FF;
                 uint32_t puntero=mv->REGS[cod_reg];
@@ -201,6 +205,7 @@ void guardaOP(uint8_t op, uint32_t valor, MaquinaVirtual *mv)
                 mv->REGS[MAR]= (4 << 16) | dirFis;
                 mv->REGS[MBR]=valor;
                 guardaMem(mv);
+            }
             break;
         default:
             break;

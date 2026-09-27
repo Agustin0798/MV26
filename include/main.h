@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 
 //constantes de cantidad
@@ -32,9 +33,6 @@
 #define CS  26
 #define DS  27
 
-//definiciones de variables globales
-extern void (*func[MF])(int32_t *,int32_t *);
-
 /* ---------- Estado completo de la máquina virtual ---------- */
 
 typedef struct {
@@ -42,6 +40,11 @@ typedef struct {
     uint32_t TDS[MTDS];
     uint32_t REGS[MR];
 } MaquinaVirtual;
+
+
+//definiciones de variables globales
+extern void (*func[MF])(int32_t *,int32_t *, MaquinaVirtual *mv);
+
 
 /* -Helpers de empaquetado de 32 bits -
  * Varios campos de la especificación (entradas de la TDS, direcciones
@@ -85,7 +88,7 @@ void guardaOP(uint8_t op, uint32_t valor, MaquinaVirtual *mv);
 void decideGuardar(uint32_t valor1, uint32_t valor2, MaquinaVirtual *mv);
 
 
-void modificaCC(int32_t);
+void modificaCC(int32_t ori, int64_t over, uint64_t carry, MaquinaVirtual *mv);
 
 // Función para los códigos no definidos
 void NULA(int32_t *a, int32_t *b, MaquinaVirtual *mv);
