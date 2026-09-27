@@ -1,6 +1,20 @@
-#include "mv.h"
+#include "main.h"
 
-void modificaCC(int32_t);
+void modificaCC(int32_t ori, int64_t over, uint64_t carry,MaquinaVirtual *mv)
+{
+    if (ori == 0)
+        mv->REGS[CC]=0x40000000;
+    else if (ori < 0)
+        mv->REGS[CC]=0x80000000;
+    else
+        mv->REGS[CC]=0;
+
+    if (over != ori)
+        mv->REGS[CC]=mv->REGS[CC] | 0x10000000;
+    carry=carry & 0xFFFFFFFF00000000;
+    if (carry > 0)
+        mv->REGS[CC]=mv->REGS[CC] | 0x20000000;
+}
 
 // Función para los códigos no definidos
 void NULA(int32_t *a, int32_t *b, MaquinaVirtual *mv)
@@ -11,11 +25,12 @@ void NULA(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 // Prototipos de las instrucciones
 void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint32_t punt_inicio=mv->REGS[EDX],dirFis;
-    uint32_t cant_val=mv->REGS[ECX] & 0x0000FFFF;
-    uint32_t tam_val=(mv->REGS[ECX] >> 16) & 0x0000FFFF;
+    uint32_t punt_inicio=mv->REGS[EDX];
+    int16_t dirFis;
+    uint16_t cant_val=mv->REGS[ECX] & 0x0000FFFF;
+    uint16_t tam_val=(mv->REGS[ECX] >> 16) & 0x0000FFFF;
     uint32_t formato=mv->REGS[EAX];
-    uint32_t buffer;
+    int32_t buffer;
     char aux[33];
     int i;
 
@@ -47,15 +62,28 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                                 printf("\nFORMATO DE READ INVALIDO\n");
                             break;
                     }
-                    //guardar en memoria
-                    //completar cuando tengamos las funciones para trabajar en memoria
+                    dirFis=calculaDirFis(i*tam_val,punt_inicio,mv);
+                    mv->REGS[LAR]=punt_inicio;
+                    mv->REGS[MAR]= (tam_val << 16) | dirFis;
+                    mv->REGS[MBR]=buffer;
+                    guardaMem(mv);
                 }
             break;
         case 2: //WRITE
                 for (i=0; i < cant_val; i++)
                 {
-                    //traer de memoria
-                    //completar cuando tengamos las funciones para trabajar en memoria
+                    dirFis=calculaDirFis(i*tam_val,punt_inicio,mv);
+                    mv->REGS[LAR]=punt_inicio;
+                    mv->REGS[MAR]= (tam_val << 16) | dirFis;
+                    leeMem(mv);
+                    buffer=mv->REGS[MBR];
+                    
+                    if (tam_val < 4)
+                    {
+                        buffer= buffer << (4 - tam_val);
+                        buffer= buffer >> (4 - tam_val);
+                    }
+
                     if ((formato & 0b00001) == 0b00001) //DECIMAL
                     {
                         printf("%d",&buffer);
@@ -94,7 +122,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void JMP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    LDL(mv->REGS[IP],b,mv);
+    LDL(&mv->REGS[IP],b,mv);
 }
 
 void JP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
@@ -174,6 +202,13 @@ void JNZ(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void NOT(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
+    uint64_t c2=*b;
+    int64_t o2=*b;
+
+    c2=~(*b);
+    o2=~(*b);
+    *b=o2 & 0x00000000FFFFFFFF;
+    modificaCC(*a,o2,c2,mv);
     *b = ~(*b);
 }
 
@@ -185,39 +220,62 @@ void STOP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void MOV(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    *a=*b;
-    modificaCC(*a);
+    uint64_t c1=*a,c2=*b;
+    int64_t o1=*a,o2=*b;
+
+    c1=c2;
+    o1=o2;
+    *a=o1 & 0x00000000FFFFFFFF;
+    modificaCC(*a,o1,c1,mv);
 }
 
 void ADD(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    *a+=*b;
-    modificaCC(*a);
+    uint64_t c1=*a,c2=*b;
+    int64_t o1=*a,o2=*b;
+
+    c1+=c2;
+    o1+=o2;
+    *a=o1 & 0x00000000FFFFFFFF;
+    modificaCC(*a,o1,c1,mv);
 }
 
 void SUB(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    *a-=*b;
-    modificaCC(*a);
+    uint64_t c1=*a,c2=~(*b)+1;
+    int64_t o1=*a,o2=~(*b)+1;
+
+    c1+=c2;
+    o1+=o2;
+    *a=o1 & 0x00000000FFFFFFFF;
+    modificaCC(*a,o1,c1,mv);
 }
 
 void MUL(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    (*a)*=*b;
-    modificaCC(*a);
+    uint64_t c1=*a,c2=*b;
+    int64_t o1=*a,o2=*b;
+
+    c1*=c2;
+    o1*=o2;
+    *a=o1 & 0x00000000FFFFFFFF;
+    modificaCC(*a,o1,c1,mv);
 }
 
 void DIV(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    int32_t cociente,resto;
-
     if(*b != 0)
     {
-        cociente=*a / *b;
+        int32_t resto;
+        uint64_t c1=*a,c2=*b;
+        int64_t o1=*a,o2=*b;
+        
         resto=*a % *b;
-
-        *a=cociente;
         mv->REGS[AC]=resto;
+        c1/=c2;
+        o1/=o2;
+        *a=o1 & 0x00000000FFFFFFFF;
+        modificaCC(*a,o1,c1,mv);
     }
     else
         error(DivCero);
@@ -225,54 +283,97 @@ void DIV(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void CMP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    int32_t resta=*a - *b;
-    modificaCC(resta);
+    int32_t resta;
+    uint64_t c1=*a,c2=~(*b)+1;
+    int64_t o1=*a,o2=~(*b)+1;
+
+    c1+=c2;
+    o1+=o2;
+    resta=o1 & 0x00000000FFFFFFFF;
+    modificaCC(resta,o1,c1,mv);
 }
 
 void AND(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    *a=*a & *b;
-    modificaCC(*a);
+    uint64_t c1=*a,c2=*b;
+    int64_t o1=*a,o2=*b;
+
+    c1&=c2;
+    o1&=o2;
+    *a=o1 & 0x00000000FFFFFFFF;
+    modificaCC(*a,o1,c1,mv);
 }
 
 void OR(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    *a=*a | *b;
-    modificaCC(*a);
+    uint64_t c1=*a,c2=*b;
+    int64_t o1=*a,o2=*b;
+
+    c1|=c2;
+    o1|=o2;
+    *a=o1 & 0x00000000FFFFFFFF;
+    modificaCC(*a,o1,c1,mv);
 }
 
 void XOR(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    *a=*a ^ *b;
-    modificaCC(*a);
+    uint64_t c1=*a,c2=*b;
+    int64_t o1=*a,o2=*b;
+
+    c1^=c2;
+    o1^=o2;
+    *a=o1 & 0x00000000FFFFFFFF;
+    modificaCC(*a,o1,c1,mv);
 }
 
 void SWAP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    int32_t temp=*a;
-    *a=*b;
-    *b=temp;
+    uint64_t c1=*a,c2=*b;
+    int64_t o1=*a,o2=*b;
+
+    c1^=c2;
+    c2^=c1;
+    c1^=c2;
+
+    o1^=o2;
+    o2^=o1;
+    o1^=o2;
+    *a=o1 & 0x00000000FFFFFFFF;
+    modificaCC(*a,o1,c1,mv);
     //TODO: ver si se modifica CC en este caso, no se especifica en el enunciado
 }
 
 void SHL(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint32_t resultado=*a << *b;
-    *a = resultado;
-    modificaCC(resultado);
+    uint64_t c1=*a,c2=*b;
+    int64_t o1=*a,o2=*b;
+
+    c1<<=c2;
+    o1<<=o2;
+    *a=o1 & 0x00000000FFFFFFFF;
+    modificaCC(*a,o1,c1,mv);
 }
 
 void SHR(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint32_t resultado= *a >> *b;
-    *a=resultado;
-    modificaCC(resultado);
+    uint64_t c1=*a,c2=*b;
+    int64_t o1=*a,o2=*b;
+
+    c1>>=c2;
+    o1>>=o2;
+    *a=c1 & 0x00000000FFFFFFFF;
+    modificaCC(*a,o1,c1,mv);
 }
 
 void SAR(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    *a= *a >> *b;
-    modificaCC(*a);
+    uint64_t c1=*a,c2=*b;
+    int64_t o1=*a,o2=*b;
+
+    c1>>=c2;
+    o1>>=o2;
+    *a=o1 & 0x00000000FFFFFFFF;
+    modificaCC(*a,o1,c1,mv);
 }
 
 void LDH(int32_t *a, int32_t *b, MaquinaVirtual *mv) 
@@ -287,6 +388,5 @@ void LDL(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void RND(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    srand(time(NULL));
     *a=rand() % (*b + 1);
 }

@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include "disassembler.h"
+#include "main.h"
 
 /* Maximo de bytes que puede tener una instruccion:
  * 1 (header) + 3 (operando memoria) + 3 (operando memoria) = 7 */
@@ -134,25 +132,25 @@ static int leer_operando(const unsigned char *bytes, unsigned char tipo,
     unsigned char  reg_byte;
 
     switch (tipo) {
-        case TIPO_REGISTRO:
+        case 0x1: // REGISTRO
             *val_reg = bytes[0];
-            return TAM_TIPO_REGISTRO;
+            return 1;
 
-        case TIPO_INMEDIATO:
+        case 0x2: // INMEDIATO
             *val_inm = (unsigned short)((bytes[0] << 8) | bytes[1]);
-            return TAM_TIPO_INMEDIATO;
+            return 2;
 
-        case TIPO_MEMORIA:
+        case 0x3:
             /* 2 bytes de desplazamiento (big-endian, con signo) +
              * 1 byte de registro (los 5 bits bajos son el codigo). */
             disp_bruto = (unsigned short)((bytes[0] << 8) | bytes[1]);
             *val_disp  = (short)disp_bruto;
             reg_byte   = bytes[2];
             *val_reg   = reg_byte & 0x1F;
-            return TAM_TIPO_MEMORIA;
+            return 3;
 
         default:
-            return TAM_TIPO_NINGUNO;
+            return 0;
     }
 }
 
@@ -168,7 +166,7 @@ int desensamblar_instruccion(const unsigned char *instr, unsigned short direccio
     unsigned char tipoB  = (header >> 4) & 0x3; /* tipo del 2do byte codificado -> OP1, solo si hay 2 operandos */
     unsigned char nibble = header & 0x0F;
     unsigned char opcode;
-    int dos_operandos = (tipoA != TIPO_NINGUNO) && (tipoB != TIPO_NINGUNO);
+    int dos_operandos = (tipoA != 0x0) && (tipoB != 0x0);
 
     unsigned char  reg_a = 0, reg_b = 0;
     unsigned short inm_a = 0, inm_b = 0;
@@ -202,7 +200,7 @@ int desensamblar_instruccion(const unsigned char *instr, unsigned short direccio
         /* tipoB = tipo de OP1 (operando A en la sintaxis Assembler) */
         pos += leer_operando(&instr[pos], tipoB, &reg_a, &inm_a, &disp_a);
 
-    } else if (tipoA != TIPO_NINGUNO) {
+    } else if (tipoA != 0x0) {
 
         /* un unico operando -> es el "OP_A" del formato de salida */
         pos += leer_operando(&instr[pos], tipoA, &reg_a, &inm_a, &disp_a);
@@ -227,7 +225,7 @@ int desensamblar_instruccion(const unsigned char *instr, unsigned short direccio
     if (dos_operandos) {
         formatear_operando(op_a_txt, sizeof(op_a_txt), tipoB, reg_a, inm_a, disp_a);
         formatear_operando(op_b_txt, sizeof(op_b_txt), tipoA, reg_b, inm_b, disp_b);
-    } else if (tipoA != TIPO_NINGUNO) {
+    } else if (tipoA != 0x0) {
         formatear_operando(op_a_txt, sizeof(op_a_txt), tipoA, reg_a, inm_a, disp_a);
     }
 

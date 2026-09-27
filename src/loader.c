@@ -1,11 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-
-#include "mv.h"
-#include "loader.h"
-
+#include "main.h"
 
 //  Manejo centralizado de errores 
 static void error_fatal(const char *contexto, const char *detalle) {
@@ -33,18 +26,22 @@ static uint16_t leer_u16_be(const uint8_t *bytes) {
  * Si algo no coincide con lo esperado, aborta con error_fatal.
  */
 void leer_cabecera(FILE *archivo, int *version, uint16_t *tam_codigo) {
-    uint8_t cabecera[4];
+    uint8_t cabecera[8];
     size_t leidos = fread(cabecera, 1, sizeof(cabecera), archivo);
     if (leidos != sizeof(cabecera)) {
         error_fatal("cabecera", "no se pudo leer la cabecera completa");
     }
 
-    *version = cabecera[0];
+    if (memcmp(cabecera, "VMX26", 5) != 0) {
+        error_fatal("cabecera", "identificador de archivo inválido (se esperaba \"VMX26\")");
+    }
+
+    *version = cabecera[5];
     if (*version != 1) {
         error_fatal("cabecera", "versión de archivo no soportada");
     }
 
-    *tam_codigo = leer_u16_be(&cabecera[2]);
+    *tam_codigo = leer_u16_be(&cabecera[6]);
     if (*tam_codigo > MM) {
         error_fatal("cabecera", "tamaño de código excede la memoria disponible");
     }
@@ -77,14 +74,16 @@ void cargar_codigo_en_memoria(FILE *archivo, MaquinaVirtual *mv, uint16_t tam_co
 }
 
 // Inicialización de registros
-static void inicializar_registros(MaquinaVirtual *mv, int version) {
+void inicializar_registros(MaquinaVirtual *mv, int version) {
     memset(mv->REGS, 0, sizeof(mv->REGS));
 
     switch(version) {
-        case 1:
+        case 1: {
+
             mv->REGS[CS] = empaquetar32(0, 0); /* 00 00 00 00 */
             mv->REGS[DS] = empaquetar32(1, 0);  /* 00 01 00 00 */
             mv->REGS[IP] = mv->REGS[CS];
+        }
             break;
         default:
             error_fatal("inicializar_registros", "versión de archivo no soportada");
@@ -105,7 +104,7 @@ void cargar_programa(const char *path, MaquinaVirtual *mv) {
 
     inicializar_tds(mv, version, tam_codigo);
     cargar_codigo_en_memoria(archivo, mv, tam_codigo);
-    inicializar_registros(mv);
+    inicializar_registros(mv, version);
 
     fclose(archivo);
 }

@@ -1,5 +1,4 @@
-#include "mv.h"
-
+#include "main.h"
 
 
 static void uso(const char *prog) {
@@ -9,6 +8,7 @@ static void uso(const char *prog) {
 int main(int argc, char *argv[]) {
 
     MaquinaVirtual mv;
+    srand(time(NULL));
 
     if (argc < 2) {
         uso(argv[0]);
@@ -34,11 +34,16 @@ int main(int argc, char *argv[]) {
         uso(argv[0]);
         return EXIT_FAILURE;
     }
-
+    
+    cargar_programa(programa, &mv);
     if (modo_disassembler) {
-        printf("mv1vm: TODO implementar disassembler de '%s'\n", programa);
+       disassembler(mv.RAM, 0, mv.TDS[0] & 0x0000FFFF);
     }
+
     printf("mv1vm: TODO implementar ejecución de '%s'\n", programa);
+
 
     return EXIT_SUCCESS;
 }
+
+
