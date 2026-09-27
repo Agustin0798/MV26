@@ -110,6 +110,7 @@ void leeMem(MaquinaVirtual *mv) //El mar no debe pedir mas de 4 bytes, dado que 
     int32_t buffer=0;
     int i;
     uint8_t aux;
+    printf("LEER MEMORIA \n");
     unsigned int cant=mv->REGS[MAR] >> 16;
     uint16_t dirFis=mv->REGS[MAR] & 0x0000FFFF;
 

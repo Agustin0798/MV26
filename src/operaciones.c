@@ -222,7 +222,7 @@ void MOV(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     uint64_t c1=*a,c2=*b;
     int64_t o1=*a,o2=*b;
-
+    printf("MOV a:%d o1: %d c1: %d \n",*a,o1,c1);
     c1=c2;
     o1=o2;
     *a=o1 & 0x00000000FFFFFFFF;

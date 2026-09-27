@@ -64,6 +64,8 @@ static inline uint16_t mitad_baja(int32_t valor) {
     return (uint16_t)(((uint32_t)valor) & 0xFFFFu);
 }
 
+void Ejecutar(MaquinaVirtual *mv);
+
 // Carga en memoria el programa .vmx pasado por parametro, inicializando la TDS y los registros de la máquina virtual.
 void cargar_programa(const char *path, MaquinaVirtual *mv);
 
