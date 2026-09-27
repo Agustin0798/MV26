@@ -5,4 +5,5 @@ build/
 CMakeCache.txt
 CMakeFiles/
 .vscode
-.vmx
+*.vmx
+*.asm

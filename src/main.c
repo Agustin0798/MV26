@@ -5,6 +5,7 @@ static void uso(const char *prog) {
     fprintf(stderr, "Uso: %s <programa.vmx> [-d]\n", prog);
 }
 
+
 int main(int argc, char *argv[]) {
 
     MaquinaVirtual mv;
@@ -40,5 +41,8 @@ int main(int argc, char *argv[]) {
     }
     printf("mv1vm: TODO implementar ejecución de '%s'\n", programa);
 
+
     return EXIT_SUCCESS;
 }
+
+
