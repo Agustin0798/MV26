@@ -18,7 +18,6 @@ void leeOperacion(uint8_t *operacion, MaquinaVirtual *mv) //lee el primer byte d
     mv->REGS[OP2]=0;
     mv->REGS[OP1]=0;
     dirFisIP=calculaDirFis(0,mv->REGS[IP],mv);
-    dirValida(mv->REGS[IP],dirFisIP,mv);
     (*operacion)=mv->RAM[dirFisIP]; 
 }
 
@@ -90,7 +89,7 @@ int32_t valorOperado(int op, MaquinaVirtual *mv) // se les pasa la constante OP1
             break;
         case 3: { //memoria
                 int16_t offset=mv->REGS[op] >> 8;
-                uint8_t cod_reg=mv->REGS[op] & 0x000000FF;
+                uint8_t cod_reg=mv->REGS[op] & 0x1F;
                 uint32_t puntero=mv->REGS[cod_reg];
                 int16_t dirFis=calculaDirFis(offset,puntero,mv);
                 mv->REGS[LAR]=puntero;
@@ -110,7 +109,7 @@ void leeMem(MaquinaVirtual *mv) //El mar no debe pedir mas de 4 bytes, dado que 
     int32_t buffer=0;
     int i;
     uint8_t aux;
-    printf("LEER MEMORIA \n");
+
     unsigned int cant=mv->REGS[MAR] >> 16;
     uint16_t dirFis=mv->REGS[MAR] & 0x0000FFFF;
 
@@ -142,7 +141,6 @@ void guardaMem(MaquinaVirtual *mv)
         // Extraemos el byte correspondiente aplicando una máscara
         aux= (valor >> shift) & 0xFF;
             
-        // Guardamos el byte en la memoria RAM
         mv->RAM[dirFis + i] = aux;
     }
 }
@@ -159,20 +157,29 @@ int16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv) //gu
     return dirFis;
 }
 
-void dirValida(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv)
+// Chequea si dirFis esta dentro de los limites del segmento apuntado por 'puntero',
+// sin abortar el programa. Se usa para decidir el fin normal del ciclo de ejecucion
+// (IP fuera del segmento de codigo), caso que la cátedra excluye explícitamente
+// de "fallo de segmento" cuando ocurre en la lectura de la instrucción.
+int direccionEnSegmento(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv)
 {
     uint16_t pos_tds=puntero >> 16;
     int16_t base_seg=mv->TDS[pos_tds] >> 16;
     uint16_t tam_seg=mv->TDS[pos_tds] & 0x0000FFFF;
     int16_t fin_seg=base_seg+tam_seg;
 
-    if ((dirFis < base_seg) || (dirFis >= fin_seg))
+    return !((dirFis < base_seg) || (dirFis >= fin_seg));
+}
+
+void dirValida(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv)
+{
+    if (!direccionEnSegmento(puntero, dirFis, mv))
         error(FalloSeg);
 }
 
 void decideGuardar(uint32_t valor1, uint32_t valor2, MaquinaVirtual *mv)
 {
-    if (((mv->REGS[OPC] >= 0x10) || (mv->REGS[OPC] <= 0x1F)) && (mv->REGS[OPC] != 0x15)) //La operacion es de dos operandos y no es el cmp?
+    if (((mv->REGS[OPC] >= 0x10) && (mv->REGS[OPC] <= 0x1F)) && (mv->REGS[OPC] != 0x15)) //La operacion es de dos operandos y no es el cmp?
     {
         guardaOP(OP1,valor1,mv);
         if (mv->REGS[OPC] == 0x19) //La operacion es el swap?
@@ -200,7 +207,7 @@ void guardaOP(uint8_t op, uint32_t valor, MaquinaVirtual *mv)
             break;
         case 3: { //memoria
                 int16_t offset=mv->REGS[op] >> 8;
-                uint8_t cod_reg=mv->REGS[op] & 0x000000FF;
+                uint8_t cod_reg=mv->REGS[op] & 0x1F;
                 uint32_t puntero=mv->REGS[cod_reg];
                 int16_t dirFis=calculaDirFis(offset,puntero,mv);
                 mv->REGS[LAR]=puntero;

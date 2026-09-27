@@ -40,13 +40,15 @@ void Ejecutar(MaquinaVirtual *mv)
 {
     uint8_t operacion,cod_op,t_op1,t_op2;
     int32_t valor1,valor2;
-    int16_t dirFis_IP=calculaDirFis(0,mv->REGS[IP],mv);
+    int16_t dirFis_IP;
 
-
-    while (dirFis_IP > -1)
+    while (mv->REGS[IP] != (uint32_t)-1)
     {
-        printf("EJECUTAR %d\n",dirFis_IP);
-        dirValida(mv->REGS[IP],dirFis_IP,mv);
+        dirFis_IP=calculaDirFis(0,mv->REGS[IP],mv);
+        if (!direccionEnSegmento(mv->REGS[IP],dirFis_IP,mv))
+            break; // IP fuera del segmento de codigo: fin normal de la ejecucion
+
+
         valor1=0;
         valor2=0;
         cod_op=0;
@@ -58,14 +60,13 @@ void Ejecutar(MaquinaVirtual *mv)
         valor2=valorOperado(OP2,mv);
         valor1=valorOperado(OP1,mv);
         cod_op=mv->REGS[OPC];
-        printf("cod op %x\n",cod_op);
+
         t_op1=mv->REGS[OP1] >> 24;
         t_op2=mv->REGS[OP2] >> 24;
         mv->REGS[IP]=mv->REGS[IP] + 1 + t_op1 + t_op2;
-        printf("IP: %d top1: %d top2:%d \n",mv->REGS[IP],t_op1,t_op2);
-        func[OPC](&valor1,&valor2,mv);
+  
+        func[cod_op](&valor1,&valor2,mv);
         decideGuardar(valor1,valor2,mv);
-        dirFis_IP=calculaDirFis(0,mv->REGS[IP],mv);
     }
 
 }

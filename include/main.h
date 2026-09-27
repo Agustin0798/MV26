@@ -78,6 +78,7 @@ void inicializar_registros(MaquinaVirtual *mv, int version);
 #define FalloSeg 3
 
 void dirValida(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv);
+int direccionEnSegmento(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv);
 int16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv);
 void guardaMem(MaquinaVirtual *mv);
 void leeMem(MaquinaVirtual *mv);
