@@ -122,3 +122,10 @@ void SAR(int32_t *a, int32_t *b, MaquinaVirtual *mv);
 void LDL(int32_t *a, int32_t *b, MaquinaVirtual *mv);
 void LDH(int32_t *a, int32_t *b, MaquinaVirtual *mv);
 void RND(int32_t *a, int32_t *b, MaquinaVirtual *mv);
+
+
+// Funciones del disassembler
+const char *obtener_mnemonico(unsigned char opcode);
+int desensamblar_instruccion(const unsigned char *instr, unsigned short direccion_fisica, char *linea, size_t tam_linea);
+
+void disassembler(const unsigned char *memoria, unsigned short base_cs, unsigned short tam_codigo);

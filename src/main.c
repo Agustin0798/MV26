@@ -5,7 +5,6 @@ static void uso(const char *prog) {
     fprintf(stderr, "Uso: %s <programa.vmx> [-d]\n", prog);
 }
 
-
 int main(int argc, char *argv[]) {
 
     MaquinaVirtual mv;
@@ -35,10 +34,12 @@ int main(int argc, char *argv[]) {
         uso(argv[0]);
         return EXIT_FAILURE;
     }
-
+    
+    cargar_programa(programa, &mv);
     if (modo_disassembler) {
-        printf("mv1vm: TODO implementar disassembler de '%s'\n", programa);
+       disassembler(mv.RAM, 0, mv.TDS[0] & 0x0000FFFF);
     }
+
     printf("mv1vm: TODO implementar ejecución de '%s'\n", programa);
 
 
