@@ -26,18 +26,22 @@ static uint16_t leer_u16_be(const uint8_t *bytes) {
  * Si algo no coincide con lo esperado, aborta con error_fatal.
  */
 void leer_cabecera(FILE *archivo, int *version, uint16_t *tam_codigo) {
-    uint8_t cabecera[4];
+    uint8_t cabecera[8];
     size_t leidos = fread(cabecera, 1, sizeof(cabecera), archivo);
     if (leidos != sizeof(cabecera)) {
         error_fatal("cabecera", "no se pudo leer la cabecera completa");
     }
 
-    *version = cabecera[0];
+    if (memcmp(cabecera, "VMX26", 5) != 0) {
+        error_fatal("cabecera", "identificador de archivo inválido (se esperaba \"VMX26\")");
+    }
+
+    *version = cabecera[5];
     if (*version != 1) {
         error_fatal("cabecera", "versión de archivo no soportada");
     }
 
-    *tam_codigo = leer_u16_be(&cabecera[2]);
+    *tam_codigo = leer_u16_be(&cabecera[6]);
     if (*tam_codigo > MM) {
         error_fatal("cabecera", "tamaño de código excede la memoria disponible");
     }
