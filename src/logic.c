@@ -81,12 +81,12 @@ int32_t valorOperado(int op, MaquinaVirtual *mv) // se les pasa la constante OP1
         case 1: { //registro
                 uint8_t cod_reg=mv->REGS[op] & 0x000000FF;
                 return mv->REGS[cod_reg];
-        }
+            }
             break;
         case 2: {//inmediato
                 int16_t valor=mv->REGS[op] & 0x0000FFFF;
                 return (int32_t) valor;
-        }
+            }
             break;
         case 3: { //memoria
                 int16_t offset=mv->REGS[op] >> 8;
@@ -97,9 +97,10 @@ int32_t valorOperado(int op, MaquinaVirtual *mv) // se les pasa la constante OP1
                 mv->REGS[MAR]= (4 << 16) | dirFis;
                 leeMem(mv);
                 return mv->REGS[MBR];
-        }
+            }
             break;
         default:
+                return 0;
             break;
     }
 }
