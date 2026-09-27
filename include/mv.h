@@ -64,3 +64,5 @@ static inline uint16_t mitad_alta(int32_t valor) {
 static inline uint16_t mitad_baja(int32_t valor) {
     return (uint16_t)(((uint32_t)valor) & 0xFFFFu);
 }
+
+void DisAssembler(MaquinaVirtual mv);
