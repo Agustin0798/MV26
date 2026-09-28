@@ -39,8 +39,9 @@ int main(int argc, char *argv[]) {
     if (modo_disassembler) {
        disassembler(mv.RAM, 0, mv.TDS[0] & 0x0000FFFF);
     }
+    printf("\nIniciando ejecucion de programa...\n\n");
     Ejecutar(&mv);
-
+    printf("\nEjecucion finalizada.\n");
 
     return EXIT_SUCCESS;
 }

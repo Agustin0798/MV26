@@ -261,4 +261,6 @@ void disassembler(const unsigned char *memoria, unsigned short base_cs, unsigned
         }
         offset = (unsigned short)(offset + longitud);
     }
+
+    printf("\n");
 }

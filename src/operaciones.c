@@ -39,6 +39,11 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
         case 1: //READ
                 for (i=0; i<cant_val;i++)
                 {
+                    dirFis=calculaDirFis(i*tam_val,punt_inicio,mv);
+                    mv->REGS[LAR]=punt_inicio;
+                    mv->REGS[MAR]= (tam_val << 16) | dirFis;
+                    printf("[%04X] ", dirFis);
+
                     switch (formato)
                     {
                         case 0x01:  //DECIMAL
@@ -62,9 +67,6 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                                 printf("\nFORMATO DE READ INVALIDO\n");
                             break;
                     }
-                    dirFis=calculaDirFis(i*tam_val,punt_inicio,mv);
-                    mv->REGS[LAR]=punt_inicio;
-                    mv->REGS[MAR]= (tam_val << 16) | dirFis;
                     mv->REGS[MBR]=buffer;
                     guardaMem(mv);
                 }
@@ -77,40 +79,43 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                     mv->REGS[MAR]= (tam_val << 16) | dirFis;
                     leeMem(mv);
                     buffer=mv->REGS[MBR];
-                    
                     if (tam_val < 4)
                     {
                         buffer= buffer << (4 - tam_val);
                         buffer= buffer >> (4 - tam_val);
                     }
-
+                    printf("[%04X] ", dirFis);
                     if ((formato & 0b00001) == 0b00001) //DECIMAL
                     {
-                        printf("%d",buffer);
+                        printf("%d ",buffer);
                     }
                     if ((formato & 0b00010) == 0b00010) //CARACTER
                     {
-                        printf("%c",buffer);
+                        if ( (buffer >= 32) && (buffer <= 126)) //ASCII imprimible
+                            printf("0a%c ",buffer);
+                        else
+                            printf(".");
                     }
                     if ((formato & 0b00100) == 0b00100) //OCTAL
                     {
-                        printf("%o",buffer);
+                        printf("0o%O ",buffer);
                     }
                     if ((formato & 0b01000) == 0b01000) //HEXADECIMAL
                     {
-                        printf("%x",buffer);
+                        printf("0x%X ",buffer);
                     }
                     if ((formato & 0b10000) == 0b10000) //BINARIO
                     { 
                         int bit,i;
                         int cant_bits= sizeof(buffer) *8;
+                        printf("0b");
                         for (i = cant_bits - 1; i >= 0; i--)
                         {
         
                             bit = (buffer >> i) & 1;
                             printf("%d", bit);
                         }
-
+                        printf(" ");
                     }
                     printf("\n");
                 }
@@ -186,7 +191,7 @@ void JNN(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
     aux>>=28;
     aux&=0b1100;
-    if ((aux == 0b0100) || (aux == 0b0000)) //bit Z encendido o ambos apagados
+    if ((aux == 0b1000) || (aux == 0b0000)) //bit Z encendido o ambos apagados
         JMP(a,b,mv);
 }
 
@@ -202,14 +207,14 @@ void JNZ(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void NOT(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint64_t c2=*b;
-    int64_t o2=*b;
+    uint64_t c2;
+    int64_t o2;
 
     c2=~(*b);
     o2=~(*b);
     *b=o2 & 0x00000000FFFFFFFF;
     modificaCC(*a,o2,c2,mv);
-    *b = ~(*b);
+    
 }
 
 
@@ -266,15 +271,13 @@ void DIV(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     if(*b != 0)
     {
-        int32_t resto;
-        uint64_t c1=*a,c2=*b;
-        int64_t o1=*a,o2=*b;
+        uint64_t c1 = *a, c2 = *b;
+        int64_t o1 = *a, o2 = *b;
         
-        resto=*a % *b;
-        mv->REGS[AC]=resto;
-        c1/=c2;
-        o1/=o2;
-        *a=o1 & 0x00000000FFFFFFFF;
+        mv->REGS[AC] = *a % *b;
+        c1 /= c2;
+        o1 /= o2;
+        *a = o1 & 0x00000000FFFFFFFF;
         modificaCC(*a,o1,c1,mv);
     }
     else
@@ -298,8 +301,8 @@ void AND(int32_t *a, int32_t *b, MaquinaVirtual *mv)
     uint64_t c1=*a,c2=*b;
     int64_t o1=*a,o2=*b;
 
-    c1&=c2;
-    o1&=o2;
+    c1&= c2;
+    o1&= o2;
     *a=o1 & 0x00000000FFFFFFFF;
     modificaCC(*a,o1,c1,mv);
 }
