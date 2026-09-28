@@ -1,67 +1,84 @@
-# Máquina Virtual para Arquitectura de Computadoras 2026 — Parte I
 
-**UNMDP – Facultad de Ingeniería | Fundamentos de la Arquitectura de Computadoras**
+```cmake
+# Máquina Virtual MV1 — Parte I
 
-Implementación de una máquina virtual capaz de interpretar y ejecutar programas escritos en el lenguaje Assembler definido por la cátedra, previamente traducidos a lenguaje máquina (`.vmx`) mediante el traductor `vmt` provisto por la cátedra.
+**UNMDP – Facultad de Ingeniería | Fundamentos de la Arquitectura de Computadoras — MV1 2026**
 
+Implementación de una máquina virtual (`vmx`) que emula la ejecución de programas escritos en el Assembler de la cátedra, previamente traducidos a lenguaje máquina (`.vmx`) con el traductor `vmt` provisto por la cátedra.
 
+| Proceso | Componente | Entrada | Salida |
+|---|---|---|---|
+| Traducción | `vmt` (cátedra) | `*.asm` | `*.vmx` |
+| Ejecución | `vmx` (**este proyecto**) | `*.vmx` | Resultados en pantalla |
 
-## Lenguaje
+## Lenguaje y entorno
 
-Este proyecto está desarrollado en **C++** (C++17), utilizando **CMake** como sistema de build.
-
-La máquina virtual interpreta el lenguaje Assembler propio de la cátedra (MV1), cuya referencia completa —sintaxis, tipos de operando, instrucciones y llamadas al sistema— está detallada en [`docs/lenguaje_assembler.md`](docs/lenguaje_assembler.md).
+- Lenguaje: **C** (estándar C11).
+- Desarrollado en **Windows 11** con **MinGW-w64 (GCC)**. También compila en Linux/macOS.
+- Sistema de build: **Make** (`Makefile` incluido).
 
 
 ## Requisitos
 
-- **CMake** ≥ 3.15
-- Compilador C++ compatible con C++17 (GCC, Clang o MSVC)
-- Sistema de build (Make, Ninja o el generador de tu preferencia)
+- **GCC** (en Windows: [MSYS2](https://www.msys2.org/) o [WinLibs](https://winlibs.com/) con MinGW-w64).
+- **GNU Make** (en Windows se llama `mingw32-make`).
 
-## Compilación (Esto es para quemar a Agus que no sabe usar CMake)
-
-El proyecto usa un build **fuera del árbol de fuentes** (out-of-source), generando los binarios en una carpeta `build/` independiente.
-
-1. Crear y entrar al directorio de build:
-   ```bash
-   mkdir build && cd build
-   ```
-
-2. Configurar el proyecto con CMake:
-   ```bash
-   cmake ..
-   ```
-   *(En Windows con Visual Studio, se puede especificar el generador, por ejemplo: `cmake .. -G "Visual Studio 17 2022"`)*
-
-3. Compilar:
-   ```bash
-   cmake --build .
-   ```
-   Esto genera el ejecutable `vmx` (o `vmx.exe` en Windows) dentro de `build/` o `bin/`, según la configuración del `CMakeLists.txt`.
-
-> Para una compilación en modo Release: `cmake .. -DCMAKE_BUILD_TYPE=Release`
-
-## Ejecución
-
-### 1. Traducir un programa Assembler a lenguaje máquina
-
-Usando el traductor de la cátedra (`tools/vmt/vmt.exe`):
+Instalación en Windows con MSYS2 (terminal *MSYS2 UCRT64*):
 
 ```bash
-tools/vmt/vmt.exe tests/asm/programa.asm tests/vmx/programa.vmx
+pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make
 ```
 
-### 2. Ejecutar el programa en la máquina virtual
+Agregar `C:\msys64\ucrt64\bin` al `PATH` y verificar:
 
 ```bash
-bin/vmx tests/vmx/programa.vmx
+gcc --version
+mingw32-make --version
 ```
 
-### 3. Ejecutar en modo disassembler
+## Compilación
 
-Muestra el código Assembler equivalente al programa cargado en memoria, además de ejecutarlo:
+Desde la raíz del proyecto (en Windows usar `mingw32-make`; en Linux/macOS, `make`):
 
 ```bash
-bin/vmx tests/vmx/programa.vmx -d
+mingw32-make            # compila y genera bin/vmx.exe
+```
+
+Compilación manual, sin Make:
+
+```bash
+gcc -std=c11 -Wall -Wextra -O2 -Iinclude src/*.c -o bin/vmx.exe
+```
+
+## Uso
+
+### 1. Traductor (provisto por la cátedra)
+
+```
+vmt filename.asm [filename.vmx] [-o]
+```
+
+- `filename.asm` (obligatorio): archivo fuente Assembler.
+- `filename.vmx` (opcional): nombre del archivo de salida. Si se omite, usa el mismo nombre con extensión `.vmx` (sobrescribe si existe).
+- `-o` (opcional): omite la salida por pantalla de la traducción (no omite los errores).
+
+```bash
+tools\vmt.exe tests\asm\hola.asm tests\vmx\hola.vmx
+```
+
+### 2. Máquina virtual
+
+```
+vmx filename.vmx [-d]
+```
+
+- `filename.vmx` (obligatorio): binario en lenguaje máquina a ejecutar.
+- `-d` (opcional): muestra el código desensamblado (disassembler) del programa cargado en memoria.
+
+```bash
+bin\vmx.exe tests\vmx\hola.vmx        # ejecuta el programa
+bin\vmx.exe tests\vmx\hola.vmx -d     # muestra el desensamblado y ejecuta
+```
+
+```
 ```

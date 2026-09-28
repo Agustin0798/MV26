@@ -1,80 +1,105 @@
-# Máquina Virtual MV1 — Parte I
+# ============================================================
+#  Makefile - Maquina Virtual MV1 (vmx)
+#  UNMDP - Fundamentos de la Arquitectura de Computadoras 2026
+#
+#  Funciona en Windows 11 (MinGW-w64 / MSYS2 / Git Bash) y Linux.
+#  En Windows usar:  mingw32-make   (o make, si esta instalado)
+# ============================================================
 
-**UNMDP – Facultad de Ingeniería | Fundamentos de la Arquitectura de Computadoras — MV1 2026**
+CC       = gcc
+CFLAGS  ?= -std=c11 -Wall -Wextra -O2
+INCLUDE  = -Iinclude
 
-Implementación de una máquina virtual (`vmx`) que emula la ejecución de programas escritos en el Assembler de la cátedra, previamente traducidos a lenguaje máquina (`.vmx`) con el traductor `vmt` provisto por la cátedra.
+SRC_DIR   = src
+BUILD_DIR = build
+BIN_DIR   = bin
 
-| Proceso | Componente | Entrada | Salida |
-|---|---|---|---|
-| Traducción | `vmt` (cátedra) | `*.asm` | `*.vmx` |
-| Ejecución | `vmx` (**este proyecto**) | `*.vmx` | Resultados en pantalla |
+# Traductor de la catedra y programas de prueba
+VMT_DIR   = tools
+TESTS_ASM = tests/asm
+TESTS_VMX = tests/vmx
 
-## Lenguaje y entorno
+# Deteccion de sistema operativo
+ifeq ($(OS),Windows_NT)
+    EXE     = .exe
+    VMT     = $(VMT_DIR)/vmt.exe
+    MKDIR   = if not exist "$(subst /,\,$(1))" mkdir "$(subst /,\,$(1))"
+    RMDIR   = if exist "$(subst /,\,$(1))" rmdir /S /Q "$(subst /,\,$(1))"
+    RMFILE  = if exist "$(subst /,\,$(1))" del /Q "$(subst /,\,$(1))"
+    # Si se corre desde Git Bash / MSYS2, usar comandos POSIX
+    ifneq ($(findstring sh,$(SHELL)),)
+        MKDIR  = mkdir -p $(1)
+        RMDIR  = rm -rf $(1)
+        RMFILE = rm -f $(1)
+    endif
+else
+    EXE     =
+    VMT     = $(VMT_DIR)/vmt
+    MKDIR   = mkdir -p $(1)
+    RMDIR   = rm -rf $(1)
+    RMFILE  = rm -f $(1)
+endif
 
-- Lenguaje: **C** (estándar C11).
-- Desarrollado en **Windows 11** con **MinGW-w64 (GCC)**. También compila en Linux/macOS.
-- Sistema de build: **Make** (`Makefile` incluido).
+TARGET  = $(BIN_DIR)/vmx$(EXE)
+SOURCES = $(wildcard $(SRC_DIR)/*.c)
+OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SOURCES))
+DEPS    = $(OBJECTS:.o=.d)
 
+# Argumentos para "make run": make run PROG=tests/vmx/x.vmx ARGS=-d
+PROG ?= tests/vmx/hola.vmx
+ARGS ?=
 
-## Requisitos
+.PHONY: all release debug run disasm test clean help
 
-- **GCC** (en Windows: [MSYS2](https://www.msys2.org/) o [WinLibs](https://winlibs.com/) con MinGW-w64).
-- **GNU Make** (en Windows se llama `mingw32-make`).
+all: $(TARGET)
 
-Instalación en Windows con MSYS2 (terminal *MSYS2 UCRT64*):
+$(TARGET): $(OBJECTS)
+	@$(call MKDIR,$(BIN_DIR))
+	$(CC) $(CFLAGS) -o $@ $^
 
-```bash
-pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make
-```
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	@$(call MKDIR,$(BUILD_DIR))
+	$(CC) $(CFLAGS) $(INCLUDE) -MMD -MP -c $< -o $@
 
-Agregar `C:\msys64\ucrt64\bin` al `PATH` y verificar:
+-include $(DEPS)
 
-```bash
-gcc --version
-mingw32-make --version
-```
+# Compilacion optimizada / con simbolos de depuracion
+release: CFLAGS = -std=c11 -Wall -Wextra -O2 -DNDEBUG
+release: clean all
 
-## Compilación
+debug: CFLAGS = -std=c11 -Wall -Wextra -g -O0
+debug: clean all
 
-Desde la raíz del proyecto (en Windows usar `mingw32-make`; en Linux/macOS, `make`):
+# Traduce un .asm a .vmx con vmt:  make tests/vmx/hola.vmx
+$(TESTS_VMX)/%.vmx: $(TESTS_ASM)/%.asm
+	@$(call MKDIR,$(TESTS_VMX))
+	$(VMT) $< $@
 
-```bash
-mingw32-make            # compila y genera bin/vmx.exe
-```
+# Ejecuta la VM sobre PROG (por defecto tests/vmx/hola.vmx)
+run: $(TARGET) $(PROG)
+	$(TARGET) $(PROG) $(ARGS)
 
-Compilación manual, sin Make:
+# Igual que run, pero mostrando el disassembler
+disasm: ARGS = -d
+disasm: run
 
-```bash
-gcc -std=c11 -Wall -Wextra -O2 -Iinclude src/*.c -o bin/vmx.exe
-```
+# Traduce todos los .asm de tests/asm y ejecuta cada uno
+ASM_FILES = $(wildcard $(TESTS_ASM)/*.asm)
+VMX_FILES = $(patsubst $(TESTS_ASM)/%.asm,$(TESTS_VMX)/%.vmx,$(ASM_FILES))
 
-## Uso
+test: $(TARGET) $(VMX_FILES)
+	@for f in $(VMX_FILES); do echo "=== $$f ==="; $(TARGET) $$f || exit 1; done
 
-### 1. Traductor (provisto por la cátedra)
+clean:
+	@$(call RMDIR,$(BUILD_DIR))
+	@$(call RMDIR,$(BIN_DIR))
 
-```
-vmt filename.asm [filename.vmx] [-o]
-```
-
-- `filename.asm` (obligatorio): archivo fuente Assembler.
-- `filename.vmx` (opcional): nombre del archivo de salida. Si se omite, usa el mismo nombre con extensión `.vmx` (sobrescribe si existe).
-- `-o` (opcional): omite la salida por pantalla de la traducción (no omite los errores).
-
-```bash
-tools\vmt.exe tests\asm\hola.asm tests\vmx\hola.vmx
-```
-
-### 2. Máquina virtual
-
-```
-vmx filename.vmx [-d]
-```
-
-- `filename.vmx` (obligatorio): binario en lenguaje máquina a ejecutar.
-- `-d` (opcional): muestra el código desensamblado (disassembler) del programa cargado en memoria.
-
-```bash
-bin\vmx.exe tests\vmx\hola.vmx        # ejecuta el programa
-bin\vmx.exe tests\vmx\hola.vmx -d     # muestra el desensamblado y ejecuta
-```
-
+help:
+	@echo "Targets disponibles:"
+	@echo "  make            Compila la VM en $(TARGET)"
+	@echo "  make release    Recompila optimizado"
+	@echo "  make debug      Recompila con simbolos de depuracion (-g)"
+	@echo "  make run        Ejecuta PROG (default: $(PROG))"
+	@echo "  make disasm     Ejecuta PROG con el disassembler (-d)"
+	@echo "  make test       Traduce y ejecuta todos los .asm de $(TESTS_ASM)"
+	@echo "  make clean      Elimina $(BUILD_DIR)/ y $(BIN_DIR)/"
