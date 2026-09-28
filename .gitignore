@@ -1,6 +1,5 @@
 build/
 *.o
-*.exe
 *.out
 CMakeCache.txt
 CMakeFiles/
