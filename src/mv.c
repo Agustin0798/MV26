@@ -34,3 +34,39 @@ void (*func[MF])(int32_t *,int32_t *, MaquinaVirtual *mv) = {
     LDH,   // 1E
     RND    // 1F
 };
+
+
+void Ejecutar(MaquinaVirtual *mv)
+{
+    uint8_t operacion,cod_op,t_op1,t_op2;
+    int32_t valor1,valor2;
+    int16_t dirFis_IP;
+
+    while (mv->REGS[IP] != (uint32_t)-1)
+    {
+        dirFis_IP=calculaDirFis(0,mv->REGS[IP],mv);
+        if (!direccionEnSegmento(mv->REGS[IP],dirFis_IP,mv))
+            break; // IP fuera del segmento de codigo: fin normal de la ejecucion
+
+
+        valor1=0;
+        valor2=0;
+        cod_op=0;
+        t_op1=0;
+        t_op2=0;
+        leeOperacion(&operacion,mv); //lee el byte que posee los codigos de operando y opeacion
+        decoOperacion(operacion,mv); //decodifica los codigos de operando y operacion y los guarda en los registros pertinentes
+        infoOperando(mv); //extrae los bytes que poseen la informacion de los operandos
+        valor2=valorOperado(OP2,mv);
+        valor1=valorOperado(OP1,mv);
+        cod_op=mv->REGS[OPC];
+
+        t_op1=mv->REGS[OP1] >> 24;
+        t_op2=mv->REGS[OP2] >> 24;
+        mv->REGS[IP]=mv->REGS[IP] + 1 + t_op1 + t_op2;
+  
+        func[cod_op](&valor1,&valor2,mv);
+        decideGuardar(valor1,valor2,mv);
+    }
+
+}

@@ -39,8 +39,7 @@ int main(int argc, char *argv[]) {
     if (modo_disassembler) {
        disassembler(mv.RAM, 0, mv.TDS[0] & 0x0000FFFF);
     }
-
-    printf("mv1vm: TODO implementar ejecución de '%s'\n", programa);
+    Ejecutar(&mv);
 
 
     return EXIT_SUCCESS;

@@ -86,22 +86,22 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
                     if ((formato & 0b00001) == 0b00001) //DECIMAL
                     {
-                        printf("%d",&buffer);
+                        printf("%d",buffer);
                     }
                     if ((formato & 0b00010) == 0b00010) //CARACTER
                     {
-                        printf("%c",&buffer);
+                        printf("%c",buffer);
                     }
                     if ((formato & 0b00100) == 0b00100) //OCTAL
                     {
-                        printf("%o",&buffer);
+                        printf("%o",buffer);
                     }
                     if ((formato & 0b01000) == 0b01000) //HEXADECIMAL
                     {
-                        printf("%x",&buffer);
+                        printf("%x",buffer);
                     }
                     if ((formato & 0b10000) == 0b10000) //BINARIO
-                    {
+                    { 
                         int bit,i;
                         int cant_bits= sizeof(buffer) *8;
                         for (i = cant_bits - 1; i >= 0; i--)
@@ -110,7 +110,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                             bit = (buffer >> i) & 1;
                             printf("%d", bit);
                         }
-        
+
                     }
                     printf("\n");
                 }

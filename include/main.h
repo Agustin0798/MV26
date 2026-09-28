@@ -64,6 +64,8 @@ static inline uint16_t mitad_baja(int32_t valor) {
     return (uint16_t)(((uint32_t)valor) & 0xFFFFu);
 }
 
+void Ejecutar(MaquinaVirtual *mv);
+
 // Carga en memoria el programa .vmx pasado por parametro, inicializando la TDS y los registros de la máquina virtual.
 void cargar_programa(const char *path, MaquinaVirtual *mv);
 
@@ -76,6 +78,7 @@ void inicializar_registros(MaquinaVirtual *mv, int version);
 #define FalloSeg 3
 
 void dirValida(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv);
+int direccionEnSegmento(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv);
 int16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv);
 void guardaMem(MaquinaVirtual *mv);
 void leeMem(MaquinaVirtual *mv);

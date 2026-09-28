@@ -1,4 +1,5 @@
 #include "main.h"
+#include <errno.h>
 
 //  Manejo centralizado de errores 
 static void error_fatal(const char *contexto, const char *detalle) {
@@ -56,7 +57,7 @@ void inicializar_tds(MaquinaVirtual *mv, int version, uint16_t tam_codigo) {
     switch (version) {
         case 1:
             mv->TDS[0] = empaquetar32(0, tam_codigo);
-            mv->TDS[1] = empaquetar32(1, MM - tam_codigo);
+            mv->TDS[1] = empaquetar32(tam_codigo, MM - tam_codigo);
             break;
         default:
             error_fatal("inicializar_tds", "versión de archivo no soportada");
