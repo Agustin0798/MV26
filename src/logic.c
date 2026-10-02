@@ -78,7 +78,7 @@ int32_t valorOperado(int op, MaquinaVirtual *mv) // se les pasa la constante OP1
     switch (tipo_op)
     {
         case 1: { //registro
-                uint8_t cod_reg=mv->REGS[op] & 0x000000FF;
+                uint8_t cod_reg=mv->REGS[op] & 0x0000001F;
                 return mv->REGS[cod_reg];
             }
             break;
@@ -150,6 +150,8 @@ int16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv) //gu
     uint16_t pos_tds=puntero >> 16;
     int16_t offset_p=puntero & 0x0000FFFF;
     int16_t dirFis;
+    if (pos_tds > 7)
+        error(FalloSeg);
     int16_t base_seg=mv->TDS[pos_tds] >> 16;  
     
     dirFis=base_seg+ offset+ offset_p;
@@ -164,6 +166,8 @@ int16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv) //gu
 int direccionEnSegmento(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv)
 {
     uint16_t pos_tds=puntero >> 16;
+    if (pos_tds > 7)
+        error(FalloSeg);
     int16_t base_seg=mv->TDS[pos_tds] >> 16;
     uint16_t tam_seg=mv->TDS[pos_tds] & 0x0000FFFF;
     int16_t fin_seg=base_seg+tam_seg;
