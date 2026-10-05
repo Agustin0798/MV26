@@ -6,7 +6,7 @@
 
 
 //constantes de cantidad
-#define MM 16384
+#define MM 65536
 #define MR 32
 #define MTDS 8
 #define MF 32
@@ -19,6 +19,8 @@
 #define LAR 4
 #define MAR 5
 #define MBR 6
+#define SP  7
+#define BP  8
 
 #define EAX 10
 #define EBX 11
@@ -32,6 +34,10 @@
 
 #define CS  26
 #define DS  27
+#define ES  28
+#define SS  29
+#define KS  30
+#define PS  31
 
 /* ---------- Estado completo de la máquina virtual ---------- */
 

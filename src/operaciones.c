@@ -108,7 +108,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                     }
                     if ((formato & 0b00100) == 0b00100) //OCTAL
                     {
-                        printf("0o%O ",buffer);
+                        printf("0o%o ",buffer);
                     }
                     if ((formato & 0b00010) == 0b00010) //CARACTER
                     {
