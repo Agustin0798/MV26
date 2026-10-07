@@ -44,7 +44,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                 {
                     dirFis=calculaDirFis(i*tam_val,punt_inicio,mv);
                     mv->REGS[LAR]=punt_inicio;
-                    mv->REGS[MAR]= (tam_val << 16) | (uint32_t)(dirFis & 0x0000FFFF);
+                    mv->REGS[MAR]= ((uint32_t)tam_val << 16) | (dirFis & 0xFFFF);
                     printf("[%04X]: ", dirFis);
 
                     switch (formato)
@@ -78,10 +78,10 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                 for (i = 0; i < cant_val; i++)
                 {
                     dirFis = calculaDirFis(i * tam_val, punt_inicio, mv);
-                    mv->REGS[LAR] = punt_inicio;
-                    mv->REGS[MAR] = ((uint32_t)tam_val << 16) | (dirFis & 0xFFFF);
+                    mv->REGS[LAR]= punt_inicio;
+                    mv->REGS[MAR]= ((uint32_t)tam_val << 16) | (dirFis & 0xFFFF);
                     leeMem(mv);
-                    uint32_t valor = mv->REGS[MBR];
+                    uint32_t valor= mv->REGS[MBR];
 
                     printf("[%04X] ", dirFis);
 
@@ -92,7 +92,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                             printf("0");
                         else
                         {
-                            int bit = 31;
+                            int bit= 31;
                             while (((valor >> bit) & 1) == 0)
                                 bit--;
                             for (; bit >= 0; bit--)
@@ -106,9 +106,9 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                         printf("0o%o ", valor);
                     if (formato & 0x02) //CARACTER: un caracter por byte, del más al menos significativo
                     {
-                        for (int k = tam_val - 1; k >= 0; k--)
+                        for (int k= tam_val - 1; k >= 0; k--)
                         {
-                            uint8_t c = (valor >> (k * 8)) & 0xFF;
+                            uint8_t c= (valor >> (k * 8)) & 0xFF;
                             putchar((c >= 32 && c < 127) ? c : '.');
                         }
                         printf(" ");
@@ -207,6 +207,39 @@ void NOT(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     *b=~(*b);
     modificaCC(*b, *b, 0, mv);
+}
+
+void PUSH(int32_t *a, int32_t *b, MaquinaVirtual *mv)
+{
+    mv->REGS[SP]-= 4;
+    if (mv->REGS[SP] < mv->REGS[SS]) 
+        error(SOver);
+    mv->REGS[LAR]= mv->REGS[SP];
+    uint16_t dirFis= calculaDirFis(0,mv->REGS[SP],mv);
+    mv->REGS[MAR]= ((uint32_t)4 << 16) | (dirFis & 0xFFFF);
+    mv->REGS[MBR]= *b;
+    guardaMem(mv);
+}
+
+void POP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
+{
+    mv->REGS[LAR]= mv->REGS[SP];
+    uint16_t dirFis= calculaDirFis(0,mv->REGS[SP],mv);
+    mv->REGS[MAR]= ((uint32_t)4 << 16) | (dirFis & 0xFFFF);
+    leeMem(mv); //detecta internamente si hay stack underflow
+    *b=mv->REGS[MBR];
+    mv->REGS[SP]+=4;
+}
+
+void CALL(int32_t *a, int32_t *b, MaquinaVirtual *mv)
+{
+    PUSH(0,&mv->REGS[IP],mv);
+    JMP(0,b,mv);
+}
+
+void RET(int32_t *a, int32_t *b, MaquinaVirtual *mv)
+{
+    POP(0,&mv->REGS[IP],mv);
 }
 
 void STOP(int32_t *a, int32_t *b, MaquinaVirtual *mv)

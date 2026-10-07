@@ -8,6 +8,10 @@ void error(int ce)
         printf("\nDIVISION POR CERO\n");
     else if (ce == FalloSeg)
         printf("\nFALLO DE SEGMENTO\n");
+   else if (ce == SOver)
+        printf("\nSTACK OVERFLOW\n");
+    else if (ce == SUnder)
+        printf("\nSTACK UNDERFLOW\n"); 
     exit(1);
 }
 
@@ -37,7 +41,7 @@ void decoOperacion(uint8_t operacion, MaquinaVirtual *mv) //decodifica la operac
 
 void infoOperando(MaquinaVirtual *mv)
 {
-    int16_t dirFis;
+    uint16_t dirFis;
     int i;
     uint32_t buffer;
     uint8_t aux;
@@ -126,6 +130,14 @@ int32_t valorOperado(int op, MaquinaVirtual *mv) // se les pasa la constante OP1
     }
 }
 
+int stackUnder(uint16_t dirFis, MaquinaVirtual *mv)
+{
+    uint16_t base= calculaDirFis(0,mv->REGS[SS],mv);
+    uint16_t pos_stack= mv->REGS[SS] >> 16;
+    uint16_t tam= mv->TDS[pos_stack] & 0x0000FFFF;
+    return (dirFis >= base+tam);
+}
+
 void leeMem(MaquinaVirtual *mv) //El mar no debe pedir mas de 4 bytes, dado que el MBR es de 4 bytes. El dato se guarda en el MBR directamente
 {
     int32_t buffer=0;
@@ -134,10 +146,14 @@ void leeMem(MaquinaVirtual *mv) //El mar no debe pedir mas de 4 bytes, dado que 
 
     unsigned int cant=mv->REGS[MAR] >> 16;
     uint16_t dirFis=mv->REGS[MAR] & 0x0000FFFF;
+    uint32_t puntero= mv->REGS[LAR];
 
     for (i=0; i<cant; i++)
     {
-        dirValida(mv->REGS[LAR],dirFis+i,mv);
+        if (puntero == mv->REGS[SP] && stackUnder(dirFis+i,mv))
+            error(SUnder);
+        else
+            dirValida(puntero,dirFis+i,mv);
         aux=mv->RAM[dirFis+i];
         buffer= (buffer << 8) | aux;
     }
@@ -167,14 +183,14 @@ void guardaMem(MaquinaVirtual *mv)
     }
 }
 
-int16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv) //guarda la dirFis ya en el MAR
+uint16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv) //guarda la dirFis ya en el MAR
 {
     uint16_t pos_tds=puntero >> 16;
     int16_t offset_p=puntero & 0x0000FFFF;
-    int16_t dirFis;
+    uint16_t dirFis;
     if ( (pos_tds < 0) || (pos_tds > 7))
         error(FalloSeg);
-    int16_t base_seg=mv->TDS[pos_tds] >> 16;  
+    uint16_t base_seg=mv->TDS[pos_tds] >> 16;  
     
     dirFis=base_seg+ offset+ offset_p;
 
@@ -185,7 +201,7 @@ int16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv) //gu
 // sin abortar el programa. Se usa para decidir el fin normal del ciclo de ejecucion
 // (IP fuera del segmento de codigo), caso que la cátedra excluye explícitamente
 // de "fallo de segmento" cuando ocurre en la lectura de la instrucción.
-int direccionEnSegmento(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv)
+int direccionEnSegmento(uint32_t puntero, uint16_t dirFis, MaquinaVirtual *mv)
 {
     uint16_t pos_tds=puntero >> 16;
     if ((pos_tds < 0) || (pos_tds > 7))
@@ -197,7 +213,7 @@ int direccionEnSegmento(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv)
     return !((dirFis < base_seg) || (dirFis >= fin_seg));
 }
 
-void dirValida(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv)
+void dirValida(uint32_t puntero, uint16_t dirFis, MaquinaVirtual *mv)
 {
     if (!direccionEnSegmento(puntero, dirFis, mv))
         error(FalloSeg);
