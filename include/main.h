@@ -6,7 +6,7 @@
 
 
 //constantes de cantidad
-#define MM 65536
+#define MM 16384 //NO TOCAR, DESCAGETA TODO
 #define MR 32
 #define MTDS 8
 #define MF 32
