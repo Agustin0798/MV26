@@ -167,6 +167,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
             }
             break;
         case 0: //CLEAR SCREEN
+                printf("\x1b[2J\x1b[H");
             break;
         case 0x0F://BREAKPOINT
             break;
