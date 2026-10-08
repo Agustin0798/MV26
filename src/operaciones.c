@@ -29,7 +29,7 @@ void NULA(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     uint32_t punt_inicio=mv->REGS[EDX];
-    int16_t dirFis;
+    uint16_t dirFis;
     uint16_t cant_val=mv->REGS[ECX] & 0x0000FFFF;
     uint16_t tam_val=(mv->REGS[ECX] >> 16) & 0x0000FFFF;
     uint32_t formato=mv->REGS[EAX];
@@ -44,7 +44,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                 {
                     dirFis=calculaDirFis(i*tam_val,punt_inicio,mv);
                     mv->REGS[LAR]=punt_inicio;
-                    mv->REGS[MAR]= (tam_val << 16) | dirFis;
+                    mv->REGS[MAR]= ((uint32_t)tam_val << 16) | (dirFis & 0xFFFF);
                     printf("[%04X]: ", dirFis);
 
                     switch (formato)
@@ -75,52 +75,47 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                 }
             break;
         case 2: //WRITE
-                for (i=0; i < cant_val; i++)
+                for (i = 0; i < cant_val; i++)
                 {
-                    dirFis=calculaDirFis(i*tam_val,punt_inicio,mv);
-                    mv->REGS[LAR]=punt_inicio;
-                    mv->REGS[MAR]= (tam_val << 16) | dirFis;
+                    dirFis = calculaDirFis(i * tam_val, punt_inicio, mv);
+                    mv->REGS[LAR]= punt_inicio;
+                    mv->REGS[MAR]= ((uint32_t)tam_val << 16) | (dirFis & 0xFFFF);
                     leeMem(mv);
-                    buffer=mv->REGS[MBR];
-                    if (tam_val < 4)
-                    {
-                        buffer= buffer << (4 - tam_val);
-                        buffer= buffer >> (4 - tam_val);
-                    }
+                    uint32_t valor= mv->REGS[MBR];
+
                     printf("[%04X] ", dirFis);
-                    
-                    if ((formato & 0b10000) == 0b10000) //BINARIO
-                    { 
-                        int bit,i;
-                        int cant_bits= sizeof(buffer) *8;
+
+                    if (formato & 0x10) //BINARIO (sin ceros a la izquierda)
+                    {
                         printf("0b");
-                        for (i = cant_bits - 1; i >= 0; i--)
+                        if (valor == 0)
+                            printf("0");
+                        else
                         {
-        
-                            bit = (buffer >> i) & 1;
-                            printf("%d", bit);
+                            int bit= 31;
+                            while (((valor >> bit) & 1) == 0)
+                                bit--;
+                            for (; bit >= 0; bit--)
+                                printf("%d", (valor >> bit) & 1);
                         }
                         printf(" ");
                     }
-                    if ((formato & 0b01000) == 0b01000) //HEXADECIMAL
+                    if (formato & 0x08) //HEXADECIMAL
+                        printf("0x%X ", valor);
+                    if (formato & 0x04) //OCTAL
+                        printf("0o%o ", valor);
+                    if (formato & 0x02) //CARACTER: un caracter por byte, del más al menos significativo
                     {
-                        printf("0x%X ",buffer);
+                        for (int k= tam_val - 1; k >= 0; k--)
+                        {
+                            uint8_t c= (valor >> (k * 8)) & 0xFF;
+                            putchar((c >= 32 && c < 127) ? c : '.');
+                        }
+                        printf(" ");
                     }
-                    if ((formato & 0b00100) == 0b00100) //OCTAL
-                    {
-                        printf("0o%O ",buffer);
-                    }
-                    if ((formato & 0b00010) == 0b00010) //CARACTER
-                    {
-                        if ( (buffer >= 32) && (buffer != 127)) //ASCII imprimible
-                            printf("%c ",buffer);
-                        else
-                            printf(".");
-                    }
-                    if ((formato & 0b00001) == 0b00001) //DECIMAL
-                    {
-                        printf("%d ",buffer);
-                    }
+                    if (formato & 0x01) //DECIMAL
+                        printf("%d ", (int32_t)valor);
+
                     printf("\n");
                 }
             break;
@@ -214,6 +209,39 @@ void NOT(int32_t *a, int32_t *b, MaquinaVirtual *mv)
     modificaCC(*b, *b, 0, mv);
 }
 
+void PUSH(int32_t *a, int32_t *b, MaquinaVirtual *mv)
+{
+    mv->REGS[SP]-= 4;
+    if (mv->REGS[SP] < mv->REGS[SS]) 
+        error(SOver);
+    mv->REGS[LAR]= mv->REGS[SP];
+    uint16_t dirFis= calculaDirFis(0,mv->REGS[SP],mv);
+    mv->REGS[MAR]= ((uint32_t)4 << 16) | (dirFis & 0xFFFF);
+    mv->REGS[MBR]= *b;
+    guardaMem(mv);
+}
+
+void POP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
+{
+    mv->REGS[LAR]= mv->REGS[SP];
+    uint16_t dirFis= calculaDirFis(0,mv->REGS[SP],mv);
+    mv->REGS[MAR]= ((uint32_t)4 << 16) | (dirFis & 0xFFFF);
+    leeMem(mv); //detecta internamente si hay stack underflow
+    *b=mv->REGS[MBR];
+    mv->REGS[SP]+=4;
+}
+
+void CALL(int32_t *a, int32_t *b, MaquinaVirtual *mv)
+{
+    PUSH(0,&mv->REGS[IP],mv);
+    JMP(0,b,mv);
+}
+
+void RET(int32_t *a, int32_t *b, MaquinaVirtual *mv)
+{
+    POP(0,&mv->REGS[IP],mv);
+}
+
 void STOP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
     mv->REGS[IP]= -1;
@@ -290,17 +318,11 @@ void SWAP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
     uint64_t c1=*a,c2=*b;
     int64_t o1=*a,o2=*b;
 
-    c1^=c2;
-    c2^=c1;
-    c1^=c2;
+    (*a)^=(*b);
+    (*b)^=(*a);
+    (*a)^=(*b);
 
-    o1^=o2;
-    o2^=o1;
-    o1^=o2;
-    *a=o1 & 0x00000000FFFFFFFF;
-    *b=o2 & 0x00000000FFFFFFFF;
-    modificaCC(*a,o1,c1,mv);
-    //TODO: ver si se modifica CC en este caso, no se especifica en el enunciado
+    modificaCC(*a, *a, 0, mv);
 }
 
 void SHL(int32_t *a, int32_t *b, MaquinaVirtual *mv) 
@@ -326,17 +348,21 @@ void SAR(int32_t *a, int32_t *b, MaquinaVirtual *mv)
     modificaCC(*a, *a, 0, mv);
 }
 
-void LDH(int32_t *a, int32_t *b, MaquinaVirtual *mv) 
-{ 
-    *a = (*a & 0x0000FFFF) | ((*b & 0x0000FFFF) << 16);
+void LDH(int32_t *a, int32_t *b, MaquinaVirtual *mv)
+{
+    *a = (int32_t)(((uint32_t)*a & 0x0000FFFF) | (((uint32_t)*b & 0x0000FFFF) << 16));
 }
 
-void LDL(int32_t *a, int32_t *b, MaquinaVirtual *mv) 
+void LDL(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    *a = (*a & 0xFFFF0000) | (*b & 0x0000FFFF);
+    *a = (int32_t)(((uint32_t)*a & 0xFFFF0000) | ((uint32_t)*b & 0x0000FFFF));
 }
 
 void RND(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    *a=rand() % (*b + 1);
+    int64_t tope = (int64_t)*b + 1;
+    if (tope <= 0)
+        *a = 0;
+    else
+        *a = (int32_t)((((uint64_t)rand() << 30) ^ ((uint64_t)rand() << 15) ^ rand()) % tope);
 }

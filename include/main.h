@@ -6,7 +6,7 @@
 
 
 //constantes de cantidad
-#define MM 16384
+#define MM 16384 //NO TOCAR, DESCAGETA TODO
 #define MR 32
 #define MTDS 8
 #define MF 32
@@ -19,6 +19,8 @@
 #define LAR 4
 #define MAR 5
 #define MBR 6
+#define SP  7
+#define BP  8
 
 #define EAX 10
 #define EBX 11
@@ -32,6 +34,10 @@
 
 #define CS  26
 #define DS  27
+#define ES  28
+#define SS  29
+#define KS  30
+#define PS  31
 
 /* ---------- Estado completo de la máquina virtual ---------- */
 
@@ -76,10 +82,12 @@ void inicializar_registros(MaquinaVirtual *mv, int version);
 #define InstInv 1
 #define DivCero 2
 #define FalloSeg 3
+#define SOver 4
+#define SUnder 5
 
 void dirValida(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv);
 int direccionEnSegmento(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv);
-int16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv);
+uint16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv);
 void guardaMem(MaquinaVirtual *mv);
 void leeMem(MaquinaVirtual *mv);
 int32_t valorOperado(int op, MaquinaVirtual *mv);
