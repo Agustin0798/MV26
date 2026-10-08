@@ -5,9 +5,13 @@ void error(int ce)
     if (ce == InstInv)
         printf("\nINSTRUCCION INVALIDA\n");
     else if (ce == DivCero)
-        printf("\nDIVICION POR CERO\n");
+        printf("\nDIVISION POR CERO\n");
     else if (ce == FalloSeg)
         printf("\nFALLO DE SEGMENTO\n");
+   else if (ce == SOver)
+        printf("\nSTACK OVERFLOW\n");
+    else if (ce == SUnder)
+        printf("\nSTACK UNDERFLOW\n"); 
     exit(1);
 }
 
@@ -37,7 +41,7 @@ void decoOperacion(uint8_t operacion, MaquinaVirtual *mv) //decodifica la operac
 
 void infoOperando(MaquinaVirtual *mv)
 {
-    int16_t dirFis;
+    uint16_t dirFis;
     int i;
     uint32_t buffer;
     uint8_t aux;
@@ -74,12 +78,32 @@ int32_t valorOperado(int op, MaquinaVirtual *mv) // se les pasa la constante OP1
 {
     int tipo_op=mv->REGS[op] >> 24;
     int i;
+    int32_t valor;
 
     switch (tipo_op)
     {
         case 1: { //registro
+                uint8_t sec_reg=mv->REGS[op] & 0x00000060;
+                sec_reg= sec_reg >> 5;
                 uint8_t cod_reg=mv->REGS[op] & 0x0000001F;
-                return mv->REGS[cod_reg];
+                valor=mv->REGS[cod_reg];
+                switch (sec_reg)
+                {
+                    case 0b00:
+                            return valor; //4 bytes
+                        break;
+                    case 0b01:
+                            return (int32_t)(valor & 0x000000FF); //byte menos significativo
+                        break;
+                    case 0b10:
+                            return (int32_t)((valor >> 8) & 0x000000FF); //2do byte menos significativo
+                        break;
+                    case 0b11:
+                            return (int32_t)(valor & 0x0000FFFF); //2 bytes menos significativos
+                        break;
+                    default:
+                        break;
+                }
             }
             break;
         case 2: {//inmediato
@@ -90,10 +114,12 @@ int32_t valorOperado(int op, MaquinaVirtual *mv) // se les pasa la constante OP1
         case 3: { //memoria
                 int16_t offset=mv->REGS[op] >> 8;
                 uint8_t cod_reg=mv->REGS[op] & 0x1F;
+                uint8_t cant_bytes=mv->REGS[op] & 0xE0;
+                cant_bytes=cant_bytes >> 5;
                 uint32_t puntero=mv->REGS[cod_reg];
-                int16_t dirFis=calculaDirFis(offset,puntero,mv);
+                uint16_t dirFis=calculaDirFis(offset,puntero,mv);
                 mv->REGS[LAR]=puntero;
-                mv->REGS[MAR]= (4 << 16) | dirFis;
+                mv->REGS[MAR]= (cant_bytes << 16) | (uint32_t)(dirFis & 0x0000FFFF);
                 leeMem(mv);
                 return mv->REGS[MBR];
             }
@@ -104,6 +130,14 @@ int32_t valorOperado(int op, MaquinaVirtual *mv) // se les pasa la constante OP1
     }
 }
 
+int stackUnder(uint16_t dirFis, MaquinaVirtual *mv)
+{
+    uint16_t base= calculaDirFis(0,mv->REGS[SS],mv);
+    uint16_t pos_stack= mv->REGS[SS] >> 16;
+    uint16_t tam= mv->TDS[pos_stack] & 0x0000FFFF;
+    return (dirFis >= base+tam);
+}
+
 void leeMem(MaquinaVirtual *mv) //El mar no debe pedir mas de 4 bytes, dado que el MBR es de 4 bytes. El dato se guarda en el MBR directamente
 {
     int32_t buffer=0;
@@ -112,15 +146,19 @@ void leeMem(MaquinaVirtual *mv) //El mar no debe pedir mas de 4 bytes, dado que 
 
     unsigned int cant=mv->REGS[MAR] >> 16;
     uint16_t dirFis=mv->REGS[MAR] & 0x0000FFFF;
+    uint32_t puntero= mv->REGS[LAR];
 
     for (i=0; i<cant; i++)
     {
-        dirValida(mv->REGS[LAR],dirFis+i,mv);
+        if (puntero == mv->REGS[SP] && stackUnder(dirFis+i,mv))
+            error(SUnder);
+        else
+            dirValida(puntero,dirFis+i,mv);
         aux=mv->RAM[dirFis+i];
         buffer= (buffer << 8) | aux;
     }
 
-    mv->REGS[MBR]=buffer;
+    mv->REGS[MBR]=(int32_t) buffer;
 }
 
 void guardaMem(MaquinaVirtual *mv) 
@@ -145,14 +183,14 @@ void guardaMem(MaquinaVirtual *mv)
     }
 }
 
-int16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv) //guarda la dirFis ya en el MAR
+uint16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv) //guarda la dirFis ya en el MAR
 {
     uint16_t pos_tds=puntero >> 16;
     int16_t offset_p=puntero & 0x0000FFFF;
-    int16_t dirFis;
-    if (pos_tds > 7)
+    uint16_t dirFis;
+    if ( (pos_tds < 0) || (pos_tds > 7))
         error(FalloSeg);
-    int16_t base_seg=mv->TDS[pos_tds] >> 16;  
+    uint16_t base_seg=mv->TDS[pos_tds] >> 16;  
     
     dirFis=base_seg+ offset+ offset_p;
 
@@ -163,10 +201,10 @@ int16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv) //gu
 // sin abortar el programa. Se usa para decidir el fin normal del ciclo de ejecucion
 // (IP fuera del segmento de codigo), caso que la cátedra excluye explícitamente
 // de "fallo de segmento" cuando ocurre en la lectura de la instrucción.
-int direccionEnSegmento(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv)
+int direccionEnSegmento(uint32_t puntero, uint16_t dirFis, MaquinaVirtual *mv)
 {
     uint16_t pos_tds=puntero >> 16;
-    if (pos_tds > 7)
+    if ((pos_tds < 0) || (pos_tds > 7))
         error(FalloSeg);
     int16_t base_seg=mv->TDS[pos_tds] >> 16;
     uint16_t tam_seg=mv->TDS[pos_tds] & 0x0000FFFF;
@@ -175,7 +213,7 @@ int direccionEnSegmento(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv)
     return !((dirFis < base_seg) || (dirFis >= fin_seg));
 }
 
-void dirValida(uint32_t puntero, int16_t dirFis, MaquinaVirtual *mv)
+void dirValida(uint32_t puntero, uint16_t dirFis, MaquinaVirtual *mv)
 {
     if (!direccionEnSegmento(puntero, dirFis, mv))
         error(FalloSeg);
@@ -202,8 +240,26 @@ void guardaOP(uint8_t op, uint32_t valor, MaquinaVirtual *mv)
     switch (tipo_op)
     {
         case 1: { //registro
-                uint8_t cod_reg=mv->REGS[op] & 0x000000FF;
-                mv->REGS[cod_reg]=valor;
+                uint8_t cod_reg=mv->REGS[op] & 0x0000001F;
+                uint8_t sec_reg=mv->REGS[op] & 0x00000060;
+                sec_reg= sec_reg >> 5;
+                switch (sec_reg)
+                {
+                    case 0b00:
+                            mv->REGS[cod_reg]=valor; //4 bytes
+                        break;
+                    case 0b01:
+                            mv->REGS[cod_reg]= (mv->REGS[cod_reg] & 0xFFFFFF00) | (valor & 0x000000FF); //byte menos significativo
+                        break;
+                    case 0b10:
+                            mv->REGS[cod_reg]= (mv->REGS[cod_reg] & 0xFFFFFF00) | ((valor >> 8) & 0x000000FF); //2do byte menos significativo
+                        break;
+                    case 0b11:
+                            mv->REGS[cod_reg]= (mv->REGS[cod_reg] & 0xFFFF0000) | (valor & 0x0000FFFF); //2 bytes menos significativos
+                        break;
+                    default:
+                        break;
+                }
             }
             break;
         case 2: //inmediato
@@ -213,9 +269,11 @@ void guardaOP(uint8_t op, uint32_t valor, MaquinaVirtual *mv)
                 int16_t offset=mv->REGS[op] >> 8;
                 uint8_t cod_reg=mv->REGS[op] & 0x1F;
                 uint32_t puntero=mv->REGS[cod_reg];
-                int16_t dirFis=calculaDirFis(offset,puntero,mv);
+                uint16_t dirFis=calculaDirFis(offset,puntero,mv);
+                uint8_t cant_bytes=mv->REGS[op] & 0xE0;
+                cant_bytes=cant_bytes >> 5;
                 mv->REGS[LAR]=puntero;
-                mv->REGS[MAR]= (4 << 16) | dirFis;
+                mv->REGS[MAR]= (cant_bytes << 16) | (uint32_t)(dirFis & 0x0000FFFF);
                 mv->REGS[MBR]=valor;
                 guardaMem(mv);
             }
