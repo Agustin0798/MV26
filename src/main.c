@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
         } 
         else if (strncmp(argv[i], "m=", 2) == 0) {
             memoria = atoi(argv[i] + 2);
+
         } 
         else if (termina_en(argv[i], ".vmx")) {
             programa = argv[i];
@@ -43,6 +44,8 @@ int main(int argc, char *argv[]) {
             break;
         }
     }
+
+    mv.RAM = malloc(memoria * 1024);
 
     // Sin .vmx se ignoran los parámetros
     if (!programa) {
