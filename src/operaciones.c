@@ -34,7 +34,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
     uint16_t tam_val=(mv->REGS[ECX] >> 16) & 0x0000FFFF;
     uint32_t formato=mv->REGS[EAX];
     int32_t buffer=0;
-    char aux[33],* cadena;
+    char aux[33],* cadena,byte;
     int i;
 
     switch (*b)
@@ -124,17 +124,17 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                 cant_val= mv->REGS[ECX];
                 dirFis=calculaDirFis(0,punt_inicio,mv);
                 if (cant_val < 0)
-                    cant_val=9999;
-                cadena=(char *) malloc((cant_val*sizeof(char))+1);
+                    cant_val= 9999;
+                cadena= (char *) malloc((cant_val*sizeof(char))+1);
                 printf("[%04X]: ",dirFis);
                 fgets(cadena, cant_val+1, stdin);
-                mv->REGS[LAR]=punt_inicio;
+                mv->REGS[LAR]= punt_inicio;
                 mv->REGS[MAR]= ((uint32_t)1 << 16);
                 i=0;
                 while ((i < cant_val) && (cadena[i] != '\0'))
                 {
                     mv->REGS[MAR]= mv->REGS[MAR] | ((dirFis + i) & 0xFFFF);
-                    mv->REGS[MBR]=cadena[i];
+                    mv->REGS[MBR]= cadena[i];
                     guardaMem(mv);
                     i++;
                 }
@@ -144,7 +144,27 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
             }
             break;
-        case 4: //STRING WRITE
+        case 4: 
+            {
+                cant_val= 9999;
+                cadena= (char *) malloc((cant_val*sizeof(char)));
+                dirFis= calculaDirFis(0,punt_inicio,mv);
+                mv->REGS[LAR]= punt_inicio;
+                mv->REGS[MAR]= ((uint32_t)1 << 16) | (dirFis & 0xFFFF);
+                leeMem(mv);
+                byte= mv->REGS[MBR] & 0x000000FF;
+                i=0;
+                while (byte != '\0' && i < cant_val - 1)
+                {
+                    cadena[i]=byte;
+                    i++;
+                    mv->REGS[MAR]= ((uint32_t)1 << 16) | ((dirFis+i) & 0xFFFF);
+                    leeMem(mv);
+                    byte= mv->REGS[MBR] & 0x000000FF;
+                }
+                cadena[i]='\0';
+                printf("%s",cadena);
+            }
             break;
         case 0: //CLEAR SCREEN
             break;
