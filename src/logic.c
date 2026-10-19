@@ -250,7 +250,7 @@ void decideGuardar(uint32_t valor1, uint32_t valor2, MaquinaVirtual *mv)
     } 
     else if (mv->REGS[OPC] == 0x0A) //La operacion es el not?
     {
-        guardaOP(OP2,valor2,mv);
+        guardaOP(OP1,valor1,mv);
     }
 }
 

@@ -42,6 +42,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
         case 1: //READ
                 for (i=0; i<cant_val;i++)
                 {
+                    buffer=0;
                     dirFis=calculaDirFis(i*tam_val,punt_inicio,mv);
                     mv->REGS[LAR]=punt_inicio;
                     mv->REGS[MAR]= ((uint32_t)tam_val << 16) | (dirFis & 0xFFFF);
@@ -83,7 +84,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                     leeMem(mv);
                     uint32_t valor= mv->REGS[MBR];
 
-                    printf("[%04X] ", dirFis);
+                    printf("[%04X]: ", dirFis);
 
                     if (formato & 0x10) //BINARIO (sin ceros a la izquierda)
                     {
