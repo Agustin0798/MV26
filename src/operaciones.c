@@ -37,7 +37,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
     char aux[33];
     int i;
 
-    switch (*b)
+    switch (*a)
     {
         case 1: //READ
                 for (i=0; i<cant_val;i++)
@@ -126,7 +126,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void JMP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    LDL(&mv->REGS[IP],b,mv);
+    LDL(&mv->REGS[IP],a,mv);
 }
 
 void JP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
@@ -205,8 +205,8 @@ void JNZ(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void NOT(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    *b=~(*b);
-    modificaCC(*b, *b, 0, mv);
+    *a=~(*a);
+    modificaCC(*a, *a, 0, mv);
 }
 
 void PUSH(int32_t *a, int32_t *b, MaquinaVirtual *mv)
@@ -217,7 +217,7 @@ void PUSH(int32_t *a, int32_t *b, MaquinaVirtual *mv)
     mv->REGS[LAR]= mv->REGS[SP];
     uint16_t dirFis= calculaDirFis(0,mv->REGS[SP],mv);
     mv->REGS[MAR]= ((uint32_t)4 << 16) | (dirFis & 0xFFFF);
-    mv->REGS[MBR]= *b;
+    mv->REGS[MBR]= *a;
     guardaMem(mv);
 }
 
@@ -227,19 +227,19 @@ void POP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
     uint16_t dirFis= calculaDirFis(0,mv->REGS[SP],mv);
     mv->REGS[MAR]= ((uint32_t)4 << 16) | (dirFis & 0xFFFF);
     leeMem(mv); //detecta internamente si hay stack underflow
-    *b=mv->REGS[MBR];
+    *a=mv->REGS[MBR];
     mv->REGS[SP]+=4;
 }
 
 void CALL(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    PUSH(0,&mv->REGS[IP],mv);
-    JMP(0,b,mv);
+    PUSH(&mv->REGS[IP],0,mv);
+    JMP(a,0,mv);
 }
 
 void RET(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    POP(0,&mv->REGS[IP],mv);
+    POP(&mv->REGS[IP],0,mv);
 }
 
 void STOP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
@@ -315,9 +315,6 @@ void XOR(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void SWAP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint64_t c1=*a,c2=*b;
-    int64_t o1=*a,o2=*b;
-
     (*a)^=(*b);
     (*b)^=(*a);
     (*a)^=(*b);
