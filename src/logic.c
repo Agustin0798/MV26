@@ -33,8 +33,15 @@ void decoOperacion(uint8_t operacion, MaquinaVirtual *mv) //decodifica la operac
     // los tamaños son tmbn el tipo de operando
     tam_opB=operacion >> 6;
     tam_opA=(operacion >> 4) & 0b0011;
-    mv->REGS[OP2]=((uint32_t)tam_opB) << 24; 
-    mv->REGS[OP1]=((uint32_t)tam_opA) << 24;
+    if (tam_opA != 0)
+    {
+        mv->REGS[OP1]=((uint32_t)tam_opA) << 24;
+        mv->REGS[OP2]=((uint32_t)tam_opB) << 24; 
+    }
+    else
+    {
+        mv->REGS[OP1]=((uint32_t)tam_opB) << 24;
+    }
     
     mv->REGS[OPC]=operacion & 0b00011111;
 }
@@ -47,20 +54,20 @@ void infoOperando(MaquinaVirtual *mv)
     uint8_t aux;
     uint8_t tam_B,tam_A;
 
-    if (mv->REGS[OP2] != 0) //puedo tener al menos un operando?
+    if (mv->REGS[OP1] != 0) //tengo al menos un operando?
     {
-        buffer=0;
-        tam_B=mv->REGS[OP2] >> 24;
-        dirFis=calculaDirFis(1,mv->REGS[IP],mv);
-        for (i=0; i<tam_B; i++)
+        if (mv->REGS[OP2] != 0) //tengo dos operandos?
         {
-            aux=mv->RAM[dirFis+i];
-            buffer= (buffer << 8) | aux;
-        }
-        mv->REGS[OP2]= (mv->REGS[OP2] & 0xFF000000) | (buffer & 0x00FFFFFF); // carga el OP2 con el tamaño y la info del operando
+            buffer=0;
+            tam_B=mv->REGS[OP2] >> 24;
+            dirFis=calculaDirFis(1,mv->REGS[IP],mv);
+            for (i=0; i<tam_B; i++)
+            {
+                aux=mv->RAM[dirFis+i];
+                buffer= (buffer << 8) | aux;
+            }
+            mv->REGS[OP2]= (mv->REGS[OP2] & 0xFF000000) | (buffer & 0x00FFFFFF); // carga el OP2 con el tamaño y la info del operando
 
-        if (mv->REGS[OP1] != 0) // tengo dos operandos?
-        {
             buffer=0;
             tam_A=mv->REGS[OP1] >> 24;
             dirFis=calculaDirFis(1+tam_B,mv->REGS[IP],mv);
@@ -70,8 +77,22 @@ void infoOperando(MaquinaVirtual *mv)
                 buffer= (buffer << 8) | aux;
             }
             mv->REGS[OP1]= (mv->REGS[OP1] & 0xFF000000) | (buffer & 0x00FFFFFF); // carga el OP1 con el tamaño y la info del operando
+
+        }
+        else
+        {
+            buffer=0;
+            tam_A=mv->REGS[OP1] >> 24;
+            dirFis=calculaDirFis(1,mv->REGS[IP],mv);
+            for (i=0; i<tam_A; i++)
+            {
+                aux=mv->RAM[dirFis+i];
+                buffer= (buffer << 8) | aux;
+            }
+            mv->REGS[OP1]= (mv->REGS[OP1] & 0xFF000000) | (buffer & 0x00FFFFFF); // carga el OP1 con el tamaño y la info del operando
         }
     }
+
 }
 
 int32_t valorOperado(int op, MaquinaVirtual *mv) // se les pasa la constante OP1 u OP2 dependiendo de que registro se quiera utilizar,
@@ -229,7 +250,7 @@ void decideGuardar(uint32_t valor1, uint32_t valor2, MaquinaVirtual *mv)
     } 
     else if (mv->REGS[OPC] == 0x0A) //La operacion es el not?
     {
-        guardaOP(OP2,valor2,mv);
+        guardaOP(OP1,valor1,mv);
     }
 }
 
@@ -252,7 +273,7 @@ void guardaOP(uint8_t op, uint32_t valor, MaquinaVirtual *mv)
                             mv->REGS[cod_reg]= (mv->REGS[cod_reg] & 0xFFFFFF00) | (valor & 0x000000FF); //byte menos significativo
                         break;
                     case 0b10:
-                            mv->REGS[cod_reg]= (mv->REGS[cod_reg] & 0xFFFFFF00) | ((valor >> 8) & 0x000000FF); //2do byte menos significativo
+                            mv->REGS[cod_reg] = (mv->REGS[cod_reg] & 0xFFFF00FF) | ((valor & 0xFF) << 8); //2do byte menos significativo
                         break;
                     case 0b11:
                             mv->REGS[cod_reg]= (mv->REGS[cod_reg] & 0xFFFF0000) | (valor & 0x0000FFFF); //2 bytes menos significativos
