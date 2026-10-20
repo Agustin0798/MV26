@@ -69,6 +69,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                         
                         default:
                                 printf("\nFORMATO DE READ INVALIDO\n");
+                                return;
                             break;
                     }
                     int c;
@@ -191,7 +192,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void JMP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    LDL(&mv->REGS[IP],a,mv);
+    LDL((int32_t *)&mv->REGS[IP],a,mv);
 }
 
 void JP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
@@ -276,35 +277,45 @@ void NOT(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void PUSH(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    mv->REGS[SP]-= 4;
-    if (mv->REGS[SP] < mv->REGS[SS]) 
+    mv->REGS[SP] -= 4;
+    if (mv->REGS[SP] < mv->REGS[SS])
         error(SOver);
-    mv->REGS[LAR]= mv->REGS[SP];
-    uint16_t dirFis= calculaDirFis(0,mv->REGS[SP],mv);
-    mv->REGS[MAR]= ((uint32_t)4 << 16) | (dirFis & 0xFFFF);
-    mv->REGS[MBR]= *a;
+
+    // CALL llama a PUSH pasando el IP en *a; PUSH evalúa su operando acá
+    int32_t v = (mv->REGS[OPC] == 0x0B) ? valorOperado(OP1, mv) : *a;
+
+    mv->REGS[LAR] = mv->REGS[SP];
+    uint16_t dirFis = calculaDirFis(0, mv->REGS[SP], mv);
+    mv->REGS[MAR] = ((uint32_t)4 << 16) | dirFis;
+    mv->REGS[MBR] = v;
     guardaMem(mv);
 }
 
 void POP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    mv->REGS[LAR]= mv->REGS[SP];
-    uint16_t dirFis= calculaDirFis(0,mv->REGS[SP],mv);
-    mv->REGS[MAR]= ((uint32_t)4 << 16) | (dirFis & 0xFFFF);
-    leeMem(mv); //detecta internamente si hay stack underflow
-    *a=mv->REGS[MBR];
-    mv->REGS[SP]+=4;
+    uint16_t tam_stack = mv->TDS[mv->REGS[SS] >> 16] & 0xFFFF;
+    uint16_t offset_sp = mv->REGS[SP] & 0xFFFF;
+
+    if (offset_sp + 4 > tam_stack)
+        error(SUnder);
+
+    mv->REGS[LAR] = mv->REGS[SP];
+    uint16_t dirFis = calculaDirFis(0, mv->REGS[SP], mv);
+    mv->REGS[MAR] = ((uint32_t)4 << 16) | dirFis;
+    leeMem(mv);
+    *a = mv->REGS[MBR];
+    mv->REGS[SP] += 4;
 }
 
 void CALL(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    PUSH(&mv->REGS[IP],0,mv);
+    PUSH((int32_t *)&mv->REGS[IP],0,mv);
     JMP(a,0,mv);
 }
 
 void RET(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    POP(&mv->REGS[IP],0,mv);
+    POP((int32_t *)&mv->REGS[IP],0,mv);
 }
 
 void STOP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
@@ -328,8 +339,8 @@ void ADD(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void SUB(int32_t *a, int32_t *b, MaquinaVirtual *mv) 
 {
-    uint64_t c = U(*a) + (uint32_t)(-S(*b));
     int64_t  o = S(*a) - S(*b);
+    uint64_t c = (uint64_t)o;
     *a = (int32_t)o;
     modificaCC(*a, o, c, mv);
 }
@@ -354,8 +365,8 @@ void DIV(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
 void CMP(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 {
-    uint64_t c = U(*a) + (uint32_t)(-S(*b));
     int64_t  o = S(*a) - S(*b);
+    uint64_t c = (uint64_t)o;
     int32_t resta = (int32_t)o;
     modificaCC(resta, o, c, mv);
 }

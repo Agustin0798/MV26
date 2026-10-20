@@ -40,11 +40,15 @@ void Ejecutar(MaquinaVirtual *mv)
 {
     uint8_t operacion,cod_op,t_op1,t_op2;
     int32_t valor1,valor2;
-    int16_t dirFis_IP;
+    uint16_t dirFis_IP;
 
     while (mv->REGS[IP] != (uint32_t)-1)
     {
-        dirFis_IP=calculaDirFis(0,mv->REGS[IP],mv);
+        if ((mv->REGS[IP] >> 16) != (mv->REGS[CS] >> 16))
+        break;                                    // IP fuera de CS: fin normal
+
+        dirFis_IP = calculaDirFis(0, mv->REGS[IP], mv);
+
         if (!direccionEnSegmento(mv->REGS[IP],dirFis_IP,mv))
             break; // IP fuera del segmento de codigo: fin normal de la ejecucion
 
@@ -57,9 +61,9 @@ void Ejecutar(MaquinaVirtual *mv)
         leeOperacion(&operacion,mv); //lee el byte que posee los codigos de operando y opeacion
         decoOperacion(operacion,mv); //decodifica los codigos de operando y operacion y los guarda en los registros pertinentes
         infoOperando(mv); //extrae los bytes que poseen la informacion de los operandos
-        valor2=valorOperado(OP2,mv);
-        valor1=valorOperado(OP1,mv);
         cod_op=mv->REGS[OPC];
+        valor2=valorOperado(OP2,mv);
+        valor1 = (cod_op == 0x0B) ? 0 : valorOperado(OP1, mv);
 
         t_op1=mv->REGS[OP1] >> 24;
         t_op2=mv->REGS[OP2] >> 24;
