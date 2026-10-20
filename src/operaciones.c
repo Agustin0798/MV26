@@ -145,7 +145,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
 
             }
             break;
-        case 4: 
+        case 4: //STRING WRITE
             {
                 cant_val= 9999;
                 cadena= (char *) malloc((cant_val*sizeof(char)));

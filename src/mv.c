@@ -12,10 +12,10 @@ void (*func[MF])(int32_t *,int32_t *, MaquinaVirtual *mv) = {
     JNN,   // 08
     JNZ,   // 09
     NOT,   // 0A
-    NULA,  // 0B 
-    NULA,  // 0C 
-    NULA,  // 0D 
-    NULA,  // 0E 
+    PUSH,  // 0B 
+    POP,  // 0C 
+    CALL,  // 0D 
+    RET,  // 0E 
     STOP,  // 0F
     MOV,   // 10
     ADD,   // 11
