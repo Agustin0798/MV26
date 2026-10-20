@@ -273,7 +273,7 @@ void guardaOP(uint8_t op, uint32_t valor, MaquinaVirtual *mv)
                             mv->REGS[cod_reg]= (mv->REGS[cod_reg] & 0xFFFFFF00) | (valor & 0x000000FF); //byte menos significativo
                         break;
                     case 0b10:
-                            mv->REGS[cod_reg]= (mv->REGS[cod_reg] & 0xFFFFFF00) | ((valor >> 8) & 0x000000FF); //2do byte menos significativo
+                            mv->REGS[cod_reg] = (mv->REGS[cod_reg] & 0xFFFF00FF) | ((valor & 0xFF) << 8); //2do byte menos significativo
                         break;
                     case 0b11:
                             mv->REGS[cod_reg]= (mv->REGS[cod_reg] & 0xFFFF0000) | (valor & 0x0000FFFF); //2 bytes menos significativos
