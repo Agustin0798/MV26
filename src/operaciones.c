@@ -71,6 +71,8 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                                 printf("\nFORMATO DE READ INVALIDO\n");
                             break;
                     }
+                    int c;
+                    while ((c = getchar()) != '\n' && c != EOF);
                     mv->REGS[MBR]=buffer;
                     guardaMem(mv);
                 }
@@ -122,49 +124,59 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
             break;
         case 3: //STRING READ
             {
-                cant_val= mv->REGS[ECX];
-                dirFis=calculaDirFis(0,punt_inicio,mv);
-                if (cant_val < 0)
-                    cant_val= 9999;
-                cadena= (char *) malloc((cant_val*sizeof(char))+1);
-                printf("[%04X]: ",dirFis);
-                fgets(cadena, cant_val+1, stdin);
-                mv->REGS[LAR]= punt_inicio;
-                mv->REGS[MAR]= ((uint32_t)1 << 16);
-                i=0;
-                while ((i < cant_val) && (cadena[i] != '\0'))
+                int32_t limite = (int32_t)mv->REGS[ECX];   // -1 = sin limite
+                if (limite < 0)
+                    limite = 9999;
+
+                dirFis = calculaDirFis(0, punt_inicio, mv);
+
+                cadena = (char *) malloc(limite + 1);
+                cadena[0] = '\0';
+
+                printf("[%04X]: ", dirFis);
+                fgets(cadena, limite + 1, stdin);
+
+                mv->REGS[LAR] = punt_inicio;
+                i = 0;
+                while ((i < limite) && (cadena[i] != '\0'))
                 {
-                    mv->REGS[MAR]= mv->REGS[MAR] | ((dirFis + i) & 0xFFFF);
-                    mv->REGS[MBR]= cadena[i];
+                    mv->REGS[MAR] = ((uint32_t)1 << 16) | ((dirFis + i) & 0xFFFF);
+                    mv->REGS[MBR] = (uint8_t)cadena[i];
                     guardaMem(mv);
                     i++;
                 }
-                mv->REGS[MAR]= mv->REGS[MAR] | ((dirFis + i) & 0xFFFF);
-                mv->REGS[MBR]='\0';
+
+                // terminador '\0' (unico byte que puede exceder el limite)
+                mv->REGS[MAR] = ((uint32_t)1 << 16) | ((dirFis + i) & 0xFFFF);
+                mv->REGS[MBR] = '\0';
                 guardaMem(mv);
 
+                // si se lleno el buffer y la linea no termino, descartar el resto
+                if (limite > 0 && strlen(cadena) == (size_t)limite && cadena[limite - 1] != '\n')
+                {
+                    int c;
+                    while ((c = getchar()) != '\n' && c != EOF)
+                        ;
+                }
+
+                free(cadena);
             }
             break;
         case 4: //STRING WRITE
             {
-                cant_val= 9999;
-                cadena= (char *) malloc((cant_val*sizeof(char)));
-                dirFis= calculaDirFis(0,punt_inicio,mv);
-                mv->REGS[LAR]= punt_inicio;
-                mv->REGS[MAR]= ((uint32_t)1 << 16) | (dirFis & 0xFFFF);
-                leeMem(mv);
-                byte= mv->REGS[MBR] & 0x000000FF;
-                i=0;
-                while (byte != '\0' && i < cant_val - 1)
+                dirFis = calculaDirFis(0, punt_inicio, mv);
+                mv->REGS[LAR] = punt_inicio;
+                i = 0;
+                while (1)
                 {
-                    cadena[i]=byte;
-                    i++;
-                    mv->REGS[MAR]= ((uint32_t)1 << 16) | ((dirFis+i) & 0xFFFF);
+                    mv->REGS[MAR] = ((uint32_t)1 << 16) | ((dirFis + i) & 0xFFFF);
                     leeMem(mv);
-                    byte= mv->REGS[MBR] & 0x000000FF;
+                    byte = mv->REGS[MBR] & 0xFF;
+                    if (byte == '\0')
+                        break;
+                    putchar(byte);
+                    i++;
                 }
-                cadena[i]='\0';
-                printf("%s",cadena);
             }
             break;
         case 0: //CLEAR SCREEN

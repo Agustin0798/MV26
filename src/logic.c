@@ -248,7 +248,7 @@ void decideGuardar(uint32_t valor1, uint32_t valor2, MaquinaVirtual *mv)
         if (mv->REGS[OPC] == 0x19) //La operacion es el swap?
             guardaOP(OP2,valor2,mv);
     } 
-    else if (mv->REGS[OPC] == 0x0A) //La operacion es el not?
+    else if ((mv->REGS[OPC] == 0x0A) || (mv->REGS[OPC] == 0x0C)) //La operacion es el not?
     {
         guardaOP(OP1,valor1,mv);
     }
