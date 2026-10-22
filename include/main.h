@@ -45,6 +45,9 @@ typedef struct {
     uint8_t RAM[MM];
     uint32_t TDS[MTDS];
     uint32_t REGS[MR];
+    char* imagen; //usar para guardar el nombre/path del archivo imagen
+    uint16_t TM; //usar para guardar el tamaño de la memoria en KiB
+    uint8_t bpoint;
 } MaquinaVirtual;
 
 
@@ -62,7 +65,8 @@ static inline int32_t empaquetar32(uint16_t mitad_alta, uint16_t mitad_baja) {
     return (int32_t)(((uint32_t)mitad_alta << 16) | (uint32_t)mitad_baja);
 }
 
-static inline uint16_t mitad_alta(int32_t valor) {
+static inline uint16_t mitad_alta(int32_t valor) 
+{
     return (uint16_t)(((uint32_t)valor) >> 16);
 }
 

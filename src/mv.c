@@ -45,7 +45,7 @@ void Ejecutar(MaquinaVirtual *mv)
     while (mv->REGS[IP] != (uint32_t)-1)
     {
         if ((mv->REGS[IP] >> 16) != (mv->REGS[CS] >> 16))
-        break;                                    // IP fuera de CS: fin normal
+            break;                                    
 
         dirFis_IP = calculaDirFis(0, mv->REGS[IP], mv);
 
@@ -71,6 +71,11 @@ void Ejecutar(MaquinaVirtual *mv)
   
         func[cod_op](&valor1,&valor2,mv);
         decideGuardar(valor1,valor2,mv);
+        if (mv->bpoint == 1)
+        {
+            mv->bpoint= 0;
+            func[0](0x0F,0,mv);
+        }
     }
 
 }

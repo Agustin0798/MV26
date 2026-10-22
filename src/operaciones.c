@@ -34,7 +34,7 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
     uint16_t tam_val=(mv->REGS[ECX] >> 16) & 0x0000FFFF;
     uint32_t formato=mv->REGS[EAX];
     int32_t buffer=0;
-    char aux[33],* cadena,byte;
+    char aux[33],* cadena,byte,car;
     int i;
 
     switch (*a)
@@ -184,6 +184,44 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                 printf("\x1b[2J\x1b[H");
             break;
         case 0x0F://BREAKPOINT
+            {
+                if (mv->imagen != NULL)
+                {
+                    FILE *arch=fopen(mv->imagen,"wb");
+                    if (arch != NULL)
+                    {
+                        fwrite("VMI26",5,1,arch);
+                        fwrite(1,1,1,arch);
+                        fwrite(mv->TM,2,1,arch);
+                        for (i=0; i < 32; i++)
+                            fwrite(mv->REGS[i],4,1,arch);
+                        for (i=0; i < 8; i++)
+                            fwrite(mv->TDS[i],4,1,arch);
+                        fwrite(mv->RAM,mv->TM,1,arch);
+                        do
+                        {
+                            scanf("%c",&car);
+                        } while (car != 'g' && car != 'q' && car != '\n');
+                        switch (car)
+                        {
+                            case 'q': 
+                                {
+                                    printf("\nGUARDADO DE IMAGEN.\n");
+                                    exit(0);
+                                }
+                                break;
+                            case '\n':
+                                {
+                                    mv->bpoint=1;
+                                }
+                            default:
+                                break;
+                        }
+                    }
+                    else
+                        printf("\nERROR AL ABRIR EL ARCHIVO IMAGEN.\n");
+                }
+            }
             break;
         default:
             break;
