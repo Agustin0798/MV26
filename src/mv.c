@@ -74,7 +74,8 @@ void Ejecutar(MaquinaVirtual *mv)
         if (mv->bpoint == 1)
         {
             mv->bpoint= 0;
-            func[0](0x0F,0,mv);
+            valor1=0x0F;
+            func[0](&valor1,0,mv);
         }
     }
 
