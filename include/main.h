@@ -42,12 +42,13 @@
 /* ---------- Estado completo de la máquina virtual ---------- */
 
 typedef struct {
-    uint8_t RAM[MM];
+    uint8_t *RAM;
     uint32_t TDS[MTDS];
     uint32_t REGS[MR];
     char* imagen; //usar para guardar el nombre/path del archivo imagen
     uint16_t TM; //usar para guardar el tamaño de la memoria en KiB
     uint8_t bpoint;
+    int vercion;
 } MaquinaVirtual;
 
 
