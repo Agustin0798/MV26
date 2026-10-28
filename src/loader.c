@@ -81,11 +81,11 @@ static uint32_t tam_param_segment(const char *vmx, int np, char **params) {
 }
 
 static void cargar_param_segment(MaquinaVirtual *mv, uint32_t base, const char *vmx, int np, char **params, uint32_t *off_argv) {
-    
     uint8_t *p = mv->RAM + base;
     uint32_t off = 0;
-    int argc = np + 1;
-    uint32_t offs[argc];                       /* offset de cada string */
+    int cant = np + 1;                          /* punteros en argv (param0 = .vmx) */
+    uint32_t *offs = malloc(cant * sizeof(uint32_t));
+    if (!offs) error_fatal("param segment", "sin memoria");
 
     offs[0] = off;
     strcpy((char *)p + off, vmx);
@@ -96,8 +96,10 @@ static void cargar_param_segment(MaquinaVirtual *mv, uint32_t base, const char *
         off += (uint32_t)strlen(params[i]) + 1;
     }
     *off_argv = off;
-    for (int i = 0; i < argc; i++)             /* seg 0x0000 | offset */
+    for (int i = 0; i < cant; i++)
         escribir_u32_be(p + off + 4 * i, offs[i]);
+
+    free(offs);
 }
 
 // TDS + registros de segmento
@@ -105,8 +107,7 @@ static void armar_segmentos(MaquinaVirtual *mv, const Cabecera *c, uint32_t tam_
     
     // orden físico: PS, KS, CS, DS, ES, SS
     const int      regs[6]  = { PS, KS, CS, DS, ES, SS };
-    const uint32_t tams[6]  = { tam_ps, c->tam_const, c->tam_codigo,
-                                c->tam_datos, c->tam_extra, c->tam_pila };
+    const uint32_t tams[6]  = { tam_ps, c->tam_const, c->tam_codigo, c->tam_datos, c->tam_extra, c->tam_pila };
 
     for (int i = 0; i < MTDS; i++) mv->TDS[i] = -1;
 
@@ -131,8 +132,7 @@ static void leer_bloque(FILE *f, uint8_t *dst, uint32_t n, const char *que) {
 }
 
 //pila inicial (solo v2)
-static void inicializar_pila(MaquinaVirtual *mv, const Cabecera *c,
-                             const uint32_t base_fis[32], int np, uint32_t off_argv) {
+static void inicializar_pila(MaquinaVirtual *mv, const Cabecera *c, const uint32_t base_fis[32], int np, uint32_t off_argv) {
     if (c->tam_pila < 12) error_fatal("pila", "stack overflow al preparar la pila inicial");
 
     uint32_t argc = np > 0 ? (uint32_t)(np + 1) : 0;
