@@ -169,7 +169,7 @@ void disassembler(MaquinaVirtual mv)
             printf(">");
         else
             printf(" ");
-        pritnf("[%04X] ",dirFis);  
+        printf("[%04X] ",dirFis);  
         
         operacion=mv.RAM[dirFis];
         printf("%02X ",operacion); //Muestro el byte que indica tamaño/tipo de operandos y codigo de operacion
@@ -199,7 +199,7 @@ void disassembler(MaquinaVirtual mv)
 
         printf("| ");
 
-        print("%s ",Mnemonicos[opc]);
+        printf("%s ",Mnemonicos[opc]);
         
 
         textoOperando(mv.RAM, dirFis + 1,tamB, opB);
