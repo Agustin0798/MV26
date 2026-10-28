@@ -201,8 +201,7 @@ uint16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv) //g
 // sin abortar el programa. Se usa para decidir el fin normal del ciclo de ejecucion
 // (IP fuera del segmento de codigo), caso que la cátedra excluye explícitamente
 // de "fallo de segmento" cuando ocurre en la lectura de la instrucción.
-int direccionEnSegmento(uint32_t puntero, uint16_t dirFis, MaquinaVirtual *mv)
-{
+int  direccionEnSegmento(uint32_t puntero, uint16_t dirFis, MaquinaVirtual *mv){
     uint16_t pos_tds=puntero >> 16;
     if ((pos_tds < 0) || (pos_tds > 7))
         error(FalloSeg);
@@ -213,8 +212,7 @@ int direccionEnSegmento(uint32_t puntero, uint16_t dirFis, MaquinaVirtual *mv)
     return !((dirFis < base_seg) || (dirFis >= fin_seg));
 }
 
-void dirValida(uint32_t puntero, uint16_t dirFis, MaquinaVirtual *mv)
-{
+void dirValida(uint32_t puntero, uint16_t dirFis, MaquinaVirtual *mv) {
     if (!direccionEnSegmento(puntero, dirFis, mv))
         error(FalloSeg);
 }
