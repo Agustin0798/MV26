@@ -45,7 +45,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    mv.RAM = malloc(memoria * 1024);
+    mv.tamRam = memoria * 1024; // Convertir KiB a bytes
+    mv.RAM = malloc(mv.tamRam);
 
     // Sin .vmx se ignoran los parámetros
     if (!programa) {

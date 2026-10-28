@@ -226,8 +226,7 @@ int direccionEnSegmento(uint32_t puntero, uint16_t dirFis, MaquinaVirtual *mv)
     return dirFis >= base_seg && dirFis < fin_seg;
 }
 
-void dirValida(uint32_t puntero, uint16_t dirFis, MaquinaVirtual *mv)
-{
+void dirValida(uint32_t puntero, uint16_t dirFis, MaquinaVirtual *mv) {
     if (!direccionEnSegmento(puntero, dirFis, mv))
         error(FalloSeg);
 }
