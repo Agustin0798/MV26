@@ -43,6 +43,7 @@
 
 typedef struct {
     uint8_t *RAM;
+    uint16_t tamRam;
     uint32_t TDS[MTDS];
     uint32_t REGS[MR];
     char* imagen; //usar para guardar el nombre/path del archivo imagen
@@ -78,7 +79,7 @@ static inline uint16_t mitad_baja(int32_t valor) {
 void Ejecutar(MaquinaVirtual *mv);
 
 // Carga en memoria el programa .vmx pasado por parametro, inicializando la TDS y los registros de la máquina virtual.
-void cargar_programa(const char *path, MaquinaVirtual *mv);
+void cargar_programa(const char *path, MaquinaVirtual *mv, int nparams, char **params);
 
 void inicializar_tds(MaquinaVirtual *mv, int version, uint16_t tam_codigo);
 void inicializar_registros(MaquinaVirtual *mv, int version);
@@ -90,8 +91,11 @@ void inicializar_registros(MaquinaVirtual *mv, int version);
 #define SOver 4
 #define SUnder 5
 
+
+//funciones de logica de la maquina virtual
+int  direccionEnSegmento(uint32_t puntero, uint16_t dirFis, MaquinaVirtual *mv);
 void dirValida(uint32_t puntero, uint16_t dirFis, MaquinaVirtual *mv);
-int direccionEnSegmento(uint32_t puntero, uint16_t dirFis, MaquinaVirtual *mv);
+
 uint16_t calculaDirFis(int16_t offset, uint32_t puntero, MaquinaVirtual *mv);
 void guardaMem(MaquinaVirtual *mv);
 void leeMem(MaquinaVirtual *mv);
