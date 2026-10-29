@@ -108,7 +108,7 @@ void disassembler(MaquinaVirtual mv)
     uint16_t posTDS,tamSeg,baseSeg,dirFis,offset,entry;
     uint8_t operacion,tamA,tamB,opc,i,aux,len;
     char opA[32], opB[32];
-    int vercion= mv.vercion;
+    int vercion= mv.version;
 
     if ((vercion == 2) && (mv.REGS[KS] != -1))  //Existe el KS
     {

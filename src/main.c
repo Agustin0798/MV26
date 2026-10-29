@@ -1,5 +1,8 @@
 #include "main.h"
-
+static int termina_en(const char *s, const char *ext) {
+    size_t ls = strlen(s), le = strlen(ext);
+    return ls >= le && strcmp(s + ls - le, ext) == 0;
+}
 
 static void uso(const char *prog) {
     fprintf(stderr, "Uso: %s <programa.vmx> [-d]\n", prog);
@@ -16,11 +19,11 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    const char *programa = NULL;   // .vmx
+    char *programa = NULL;   // .vmx
     const char *imagen = NULL;     // .vmi
     int memoria = 16;              // KiB, por defecto 16
     int modo_disassembler = 0;     // se activa si se pasa el flag -d
-    const char **params = NULL;    // primer parámetro dentro de argv
+    char **params = NULL;    // primer parámetro dentro de argv
     int cant_params = 0;           // cantidad de parámetros ingresados
 
     for (int i = 1; i < argc; i++) {
@@ -35,11 +38,11 @@ int main(int argc, char *argv[]) {
             programa = argv[i];
         } 
         else if (termina_en(argv[i], ".vmi")) {
-            imagen = argv[i];
+            mv.imagen = argv[i];
         } 
         else if (strcmp(argv[i], "-p") == 0) {
             // -p va siempre al final: lo que sigue son parámetros
-            params = (const char **)&argv[i + 1];
+            params = (char **)&argv[i + 1];
             cant_params = argc - i - 1;
             break;
         }
@@ -56,9 +59,9 @@ int main(int argc, char *argv[]) {
     
     // Para hacer: usar imagen, memoria, params y cant_params
 
-    cargar_programa(programa, &mv);
+    cargar_programa(programa, &mv,cant_params,params);
     if (modo_disassembler) {
-        disassembler(mv.RAM, 0, mv.TDS[0] & 0x0000FFFF);
+        disassembler(mv);
     }
     printf("\nIniciando ejecucion de programa...\n\n");
     Ejecutar(&mv);

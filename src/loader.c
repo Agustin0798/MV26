@@ -153,7 +153,8 @@ void cargar_programa(const char *path, MaquinaVirtual *mv, int nparams, char **p
     uint32_t off_argv = 0;
 
     leer_cabecera(f, &c, mv);
-
+    mv->version=c.version;
+    
     memset(mv->REGS, 0, sizeof(mv->REGS));
     memset(mv->RAM, 0, mv->tamRam);
 

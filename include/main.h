@@ -47,9 +47,8 @@ typedef struct {
     uint32_t TDS[MTDS];
     uint32_t REGS[MR];
     char* imagen; //usar para guardar el nombre/path del archivo imagen
-    uint16_t TM; //usar para guardar el tamaño de la memoria en KiB
     uint8_t bpoint;
-    int vercion;
+    int version;
 } MaquinaVirtual;
 
 
@@ -149,7 +148,4 @@ void RND(int32_t *a, int32_t *b, MaquinaVirtual *mv);
 
 
 // Funciones del disassembler
-const char *obtener_mnemonico(unsigned char opcode);
-int desensamblar_instruccion(const unsigned char *instr, unsigned short direccion_fisica, char *linea, size_t tam_linea);
-
-void disassembler(const unsigned char *memoria, unsigned short base_cs, unsigned short tam_codigo);
+void disassembler(MaquinaVirtual mv);

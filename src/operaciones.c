@@ -193,12 +193,13 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
                         fwrite("VMI26",5,1,arch);
                         int ver=1;
                         fwrite(&ver,1,1,arch);
-                        fwrite(&mv->TM,2,1,arch);
+                        uint16_t tamMem=mv->tamRam/1024; //Paso de bytes a KiB
+                        fwrite(&tamMem,2,1,arch);
                         for (i=0; i < 32; i++)
                             fwrite(&mv->REGS[i],4,1,arch);
                         for (i=0; i < 8; i++)
                             fwrite(&mv->TDS[i],4,1,arch);
-                        fwrite(mv->RAM,mv->TM,1,arch);
+                        fwrite(mv->RAM,tamMem,1,arch);
                         do
                         {
                             scanf("%c",&car);
