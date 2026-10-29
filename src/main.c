@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     }
 
     char *programa = NULL;   // .vmx
-    const char *imagen = NULL;     // .vmi
+    mv.imagen = NULL;     // .vmi
     int memoria = 16;              // KiB, por defecto 16
     int modo_disassembler = 0;     // se activa si se pasa el flag -d
     char **params = NULL;    // primer parámetro dentro de argv
