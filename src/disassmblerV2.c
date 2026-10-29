@@ -119,7 +119,7 @@ void disassembler(MaquinaVirtual mv)
         offset=0;
         while (offset < tamSeg)
         {
-            dirFis+=offset;
+            dirFis = baseSeg + offset;
             printf(" [%04X] ",dirFis);           //promp de direccion fisica
             
             len=1;
@@ -164,7 +164,7 @@ void disassembler(MaquinaVirtual mv)
         tamB=0;
         tamA=0;
         opc=0;
-        dirFis+=offset;
+        dirFis = baseSeg + offset;
         if ((vercion == 2) && (dirFis == entry))   //Si estoy en vercion dos veo si la direccion fisica actual es el enty point
             printf(">");
         else
@@ -198,8 +198,6 @@ void disassembler(MaquinaVirtual mv)
             printf("   ");
 
         printf("| ");
-
-        printf("%s ",Mnemonicos[opc]);
         
 
         textoOperando(mv.RAM, dirFis + 1,tamB, opB);
