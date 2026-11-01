@@ -83,6 +83,10 @@ void cargar_programa(const char *path, MaquinaVirtual *mv, int nparams, char **p
 void inicializar_tds(MaquinaVirtual *mv, int version, uint16_t tam_codigo);
 void inicializar_registros(MaquinaVirtual *mv, int version);
 
+// Función para cargar la imagen de memoria desde un archivo .vmi
+int cargar_imagen(const char *nombre_archivo, MaquinaVirtual *mv);
+int guardar_imagen(const char *nombre_archivo, MaquinaVirtual *mv);
+
 // constantes de errores
 #define InstInv 1
 #define DivCero 2

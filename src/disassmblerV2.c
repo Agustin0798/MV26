@@ -117,16 +117,18 @@ void disassembler(MaquinaVirtual mv)
         tamSeg=mv.TDS[posTDS] & 0x0000FFFF;
         dirFis=baseSeg;
         offset=0;
+
         while (offset < tamSeg)
         {
             dirFis = baseSeg + offset;
             printf(" [%04X] ",dirFis);           //promp de direccion fisica
             
             len=1;
-            while (mv.RAM[dirFis + len - 1] != '\0') //longitud del string a mostrar
+            while (mv.RAM[dirFis + len - 1] != '\0'){
                 len++;
+            } //longitud del string a mostrar
 
-            if (len > 7) //El string supera 7 bytes de longitud?
+                if (len > 7) //El string supera 7 bytes de longitud?
             {
                 for (i=0; i < 6; i++)
                     printf("%02X ", mv.RAM[dirFis + i]);
@@ -156,6 +158,7 @@ void disassembler(MaquinaVirtual mv)
     posTDS=(mv.REGS[CS] >> 16) & 0x0000FFFF;
     baseSeg=(mv.TDS[posTDS] >> 16) & 0x0000FFFF;
     tamSeg=mv.TDS[posTDS] & 0x0000FFFF;
+
     dirFis=baseSeg;
     offset=0;
     entry=calculaDirFis(0,mv.REGS[IP],&mv);
