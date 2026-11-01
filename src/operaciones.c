@@ -183,48 +183,37 @@ void SYS(int32_t *a, int32_t *b, MaquinaVirtual *mv)
         case 0: //CLEAR SCREEN
                 printf("\x1b[2J\x1b[H");
             break;
-        case 0x0F://BREAKPOINT
-            {
-                if (mv->imagen != NULL)
-                {
-                    FILE *arch=fopen(mv->imagen,"wb");
-                    if (arch != NULL)
-                    {
-                        fwrite("VMI26",5,1,arch);
-                        int ver=1;
-                        fwrite(&ver,1,1,arch);
-                        uint16_t tamMem=mv->tamRam/1024; //Paso de bytes a KiB
-                        fwrite(&tamMem,2,1,arch);
-                        for (i=0; i < 32; i++)
-                            fwrite(&mv->REGS[i],4,1,arch);
-                        for (i=0; i < 8; i++)
-                            fwrite(&mv->TDS[i],4,1,arch);
-                        fwrite(mv->RAM,tamMem,1,arch);
-                        do
-                        {
-                            scanf("%c",&car);
-                        } while (car != 'g' && car != 'q' && car != '\n');
-                        switch (car)
-                        {
-                            case 'q': 
-                                {
-                                    printf("\nGUARDADO DE IMAGEN.\n");
-                                    exit(0);
-                                }
-                                break;
-                            case '\n':
-                                {
-                                    mv->bpoint=1;
-                                }
-                            default:
-                                break;
-                        }
-                    }
-                    else
-                        printf("\nERROR AL ABRIR EL ARCHIVO IMAGEN.\n");
-                }
+        case 0x0F: // BREAKPOINT
+        {
+            if (mv->imagen == NULL)
+                break;                              // sin .vmi, se ignora
+
+            if (guardar_imagen(mv->imagen, mv) != 0)
+                break;                              // ya informó el error
+
+            char car;
+            do {
+                car = getchar();
+            } while (car != 'g' && car != 'q' && car != '\n');
+
+            if (car != '\n') {                      // si no, queda pendiente el '\n' de "g\n"/"q\n"
+                int c;
+                while ((c = getchar()) != '\n' && c != EOF);
+            }
+
+            switch (car) {
+                case 'q':
+                    printf("\nGUARDADO DE IMAGEN.\n");
+                    exit(0);
+                case 'g':
+                    mv->bpoint = 0;                 // continuar hasta el próximo breakpoint
+                    break;
+                case '\n':
+                    mv->bpoint = 1;                 // paso a paso
+                    break;
             }
             break;
+        }
         default:
             break;
     }

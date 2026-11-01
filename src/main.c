@@ -74,6 +74,7 @@ int main(int argc, char *argv[]) {
     
 
     if (modo_disassembler) {
+
         disassembler(mv);
     }
     printf("\nIniciando ejecucion de programa...\n\n");

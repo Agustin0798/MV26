@@ -5,8 +5,7 @@
 static int leer_u32(FILE *f, uint32_t *out) {
     uint8_t b[4];
     if (fread(b, 1, 4, f) != 4) return -1;
-    *out = ((uint32_t)b[0] << 24) | ((uint32_t)b[1] << 16) |
-           ((uint32_t)b[2] << 8)  |  (uint32_t)b[3];
+    *out = ((uint32_t)b[0] << 24) | ((uint32_t)b[1] << 16) | ((uint32_t)b[2] << 8)  |  (uint32_t)b[3];
     return 0;
 }
 
@@ -18,6 +17,7 @@ static int escribir_u32(FILE *f, uint32_t v) {
 /* ---------- carga ---------- */
 
 int cargar_imagen(const char *nombre_archivo, MaquinaVirtual *mv) {
+
     FILE *f = fopen(nombre_archivo, "rb");
     if (!f) {
         fprintf(stderr, "No se pudo abrir la imagen: %s\n", nombre_archivo);
@@ -36,20 +36,20 @@ int cargar_imagen(const char *nombre_archivo, MaquinaVirtual *mv) {
         return -1;
     }
 
-    uint32_t kib = ((uint32_t)hdr[6] << 8) | hdr[7];
-    uint32_t tam = kib * 1024;
-    if (kib == 0 || tam > 65536) {
+    uint16_t kib = ((uint16_t)hdr[6] << 8) | hdr[7];
+    uint16_t tam = kib * 1024;
+
+    if (kib == 0 || tam > 65536) 
+    {
         fprintf(stderr, "Tamaño de memoria invalido en la imagen: %u KiB\n", kib);
         fclose(f);
         return -1;
     }
 
-    /* el tamaño sale de la imagen; m=M se ignora */
-    free(mv->RAM);
+
     mv->RAM = calloc(tam, 1);
     if (!mv->RAM) { fclose(f); return -1; }
-    mv->tamRam = tam;               /* requiere uint32_t */
-
+    mv->tamRam = tam;               
     for (int i = 0; i < MR; i++)
         if (leer_u32(f, &mv->REGS[i]) != 0) goto err;
 
