@@ -62,13 +62,13 @@ void Ejecutar(MaquinaVirtual *mv)
         decoOperacion(operacion,mv); //decodifica los codigos de operando y operacion y los guarda en los registros pertinentes
         infoOperando(mv); //extrae los bytes que poseen la informacion de los operandos
         cod_op=mv->REGS[OPC];
-        valor2=valorOperado(OP2,mv);
-        valor1 = (cod_op == 0x0B) ? 0 : valorOperado(OP1, mv);
-
+        
         t_op1=mv->REGS[OP1] >> 24;
         t_op2=mv->REGS[OP2] >> 24;
         mv->REGS[IP]=mv->REGS[IP] + 1 + t_op1 + t_op2;
-  
+        
+        valor2=valorOperado(OP2,mv);
+        valor1 = (cod_op == 0x0B) ? 0 : valorOperado(OP1, mv);
         func[cod_op](&valor1,&valor2,mv);
         decideGuardar(valor1,valor2,mv);
         if (mv->bpoint == 1)
